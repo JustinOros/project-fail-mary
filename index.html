@@ -57,8 +57,12 @@ tr.win td{background:rgba(255,217,61,.12)}
 #chatBox{top:10px;bottom:auto;left:10px;width:calc(100vw - 20px)}
 #chatBox input{flex:1;min-width:0}
 #chatSend,#chatX{display:block}
-#chatLog{top:170px;bottom:auto;left:200px;width:calc(100vw - 440px);max-width:420px}
+#chatLog{top:170px;bottom:auto;left:200px;width:max(240px,calc(100vw - 440px));max-width:420px}
 }
+@media (pointer:coarse) and (orientation:portrait){
+#chatLog{top:170px;left:10px;width:calc(100vw - 20px);max-width:none}
+}
+#chatLog .cl{overflow-wrap:anywhere}
 .gpf{outline:3px solid #ffd93d !important;outline-offset:3px;box-shadow:0 0 18px #ffd93d !important}
 #osk{z-index:60;background:rgba(2,4,12,.75)}
 #oskText{font-size:34px;letter-spacing:4px;min-height:48px;font-weight:800;color:#ffd93d}
@@ -523,7 +527,7 @@ txt(b.label,b.x,b.y-b.r*0.12,b.k==='give'?b.r*0.55:b.r*0.8,'#fff','center','900'
 txt(b.k==='grab'&&tc.lat?'LOCKED':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
 }else txt(b.label,b.x,b.y,b.r*1.0,'#fff','center','800');
 }
-if(vh>vw)txt('Turn your phone sideways for a wider view',vw/2,vh*0.12,15,'#ffd93d','center','700');
+if(vh>vw)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,'#ffd93d','center','700');
 }
 
 function typing(){return S.chatOpen||!$('osk').classList.contains('hidden')}
