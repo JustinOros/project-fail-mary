@@ -677,6 +677,15 @@ if(rv<0){const k=1.85*(-rv)*f;me.vx+=k*nx;me.vy+=k*ny;sfx.bump();burst((me.x+o.x
 const push=(R*2-d)*f;me.x+=nx*push;me.y+=ny*push;
 }
 });
+if(S.phase==='play'&&me.fuel<=0.9){
+for(let i=0;i<L.fuel.length;i++){
+if(S.fTaken.has(i)||S.fPending.has(i))continue;
+if(Math.hypot(me.x-L.fuel[i].x,me.y-L.fuel[i].y)<R+24){
+S.fPending.add(i);
+if(S.isHost)handleFuel(S.myId,i);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'fuel',i});
+}
+}
+}
 if(S.phase==='play'){
 for(let i=0;i<L.pick.length;i++){
 if(S.taken.has(i)||S.pending.has(i))continue;
@@ -721,11 +730,6 @@ let best=-1,bd=1e9;
 L.st.forEach((s,i)=>{if(S.stDone[i])return;const d=Math.hypot(me.x-s.x,me.y-s.y);if(d<s.r+RR&&d<bd){bd=d;best=i}});
 if(best>=0)me.rep=best;
 else if(allDone()&&Math.hypot(me.x-L.fin.x,me.y-L.fin.y)<L.fin.r+RR)me.rep=-2;
-else if(me.fuel<=0.85){
-let fb=-1,fd=1e9;
-L.fuel.forEach((k,i)=>{if(S.fTaken.has(i))return;const d=Math.hypot(me.x-k.x,me.y-k.y);if(d<FR&&d<fd){fd=d;fb=i}});
-if(fb>=0)me.rep=1000+fb;
-}
 }
 const prev=me.holdId===undefined?-1:me.holdId;
 if(prev!==-1&&me.rep!==prev&&!(prev>=0&&prev<1000&&S.stDone[prev])&&!(prev>=1000&&S.fTaken.has(prev-1000)))reportLost(prev);
@@ -1007,6 +1011,9 @@ p.tx=m.x;p.ty=m.y;p.vx=m.vx;p.vy=m.vy;p.a=m.a;p.rep=m.rep;p.rr=m.rr;p.stun=m.stu
 if(!p.seen){p.x=p.tx;p.y=p.ty;p.seen=true}
 }else if(m.t==='pick'){
 handlePick(id,m.i);
+}else if(m.t==='fuel'){
+const fb=S.L&&S.L.fuel[m.i],fp=S.players.get(id);
+if(fb&&fp&&Math.hypot(fp.x-fb.x,fp.y-fb.y)<R+120)handleFuel(id,m.i|0);
 }else if(m.t==='gift'){
 deliverGift(m.to,Math.min(0.2,Math.max(0,+m.amt||0)));
 }else if(m.t==='chat'){
@@ -1497,7 +1504,6 @@ if(S.fTaken.has(i)||!vis(k.x-30,k.y-30,60,60))return;
 const by=Math.sin(t*2.5+i*2)*3;
 const g=ctx.createRadialGradient(k.x,k.y+by,2,k.x,k.y+by,30);g.addColorStop(0,'rgba(77,163,255,.45)');g.addColorStop(1,'rgba(77,163,255,0)');
 ctx.fillStyle=g;ctx.fillRect(k.x-34,k.y+by-34,68,68);
-ctx.strokeStyle='rgba(77,163,255,.3)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.beginPath();ctx.arc(k.x,k.y+by,FR,0,6.3);ctx.stroke();ctx.setLineDash([]);
 ctx.fillStyle='#16316f';ctx.strokeStyle='#4da3ff';ctx.lineWidth=2;
 ctx.beginPath();ctx.roundRect(k.x-14,k.y+by-14,28,28,6);ctx.fill();ctx.stroke();
 const fpv=S.fProg[i]||0;

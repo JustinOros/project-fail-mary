@@ -43,7 +43,7 @@ You float in zero gravity, so momentum is everything.
 - Release grab to push off toward where you are aiming. Holding grab longer before releasing gives a harder push.
 - Thrusters give you extra control, but fuel is limited and does not refill on its own.
 - Hold **repair** inside the dashed ring around a panel to work on it. Letting go, drifting out of the ring, or getting stunned resets the progress back to zero.
-- Fuel boxes work the same way: hold repair inside their ring to capture one for half a tank.
+- Fuel boxes refill half a tank. Just fly into one. A box is ignored while your tank is almost full, so it stays for someone who needs it.
 - You can share your own fuel with a nearby friend by holding **share fuel** next to them.
 - Crawlers bump into each other, so you can knock a friend off a panel.
 
