@@ -97,11 +97,11 @@ Touch controls appear automatically on a touchscreen. Landscape gives the widest
 - Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
 - The buttons on the right copy an Xbox controller: A grabs, B thrusts, Y repairs and X drops the selected item. LT shares fuel. Hold them like the keyboard keys.
 - Tap a slot in the bottom bar to select an item.
-- Tap the chat bubble next to the cog to type a message.
+- Tap the chat bubble next to the cog to type a message. Your phone keyboard pops up.
 
 ## Chat
 
-Press Enter in a lobby or during a game to type a message to everyone. On a controller, press Select or View to open the on screen keyboard, which includes a few emoji keys.
+Press Enter, or click the chat bubble next to the cog, in a lobby or during a game to type a message to everyone. On a controller, press Select or View to open the on screen keyboard, which includes a few emoji keys.
 
 ## Browser support
 

@@ -66,6 +66,8 @@ tr.win td{background:rgba(255,217,61,.12)}
 #oskKeys button{padding:10px 0;font-size:18px;background:#16224a;border:1px solid #3c4d85}
 @media (max-height:520px){.card{padding:14px 18px;gap:8px}h1{font-size:28px}#lobbyCode{font-size:40px;letter-spacing:8px}.sw{width:30px;height:30px}.screen{padding:58px 10px 10px;gap:8px}button.go{font-size:18px;padding:11px 28px}td{padding:6px 8px;font-size:16px}}
 #cog{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:40;width:46px;height:46px;border-radius:50%;padding:0;font-size:24px;background:rgba(10,16,34,.85);border:1px solid #3c4d85}
+#chatBtn{position:fixed;left:calc(50% + 58px);top:14px;transform:translateX(-50%);z-index:40;width:46px;height:46px;border-radius:50%;padding:0;font-size:22px;background:rgba(10,16,34,.85);border:1px solid #3c4d85}
+#chatBtn:hover{transform:translateX(-50%) translateY(-1px)}
 #cog:hover{transform:translateX(-50%) rotate(60deg)}
 #settings{z-index:30;background:rgba(2,4,12,.6)}
 #setRows{width:100%;max-height:56vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
@@ -109,6 +111,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 </div>
 
 <button id="cog" title="Settings">⚙️</button>
+<button id="chatBtn" title="Chat" style="display:none">💬</button>
 <div id="settings" class="screen hidden">
 <div class="card">
 <h2>CONTROLS</h2>
@@ -447,8 +450,7 @@ return{ts,H,right:cx-d-r-10*ts,btns:[
 {k:'thr',x:cx+d,y:cy,r,label:'B',cap:'THRUST',col:'#ff4d4d',hold:true},
 {k:'rep',x:cx,y:cy-d,r,label:'Y',cap:'REPAIR',col:'#ffd93d',hold:true},
 {k:'drop',x:cx-d,y:cy,r,label:'X',cap:'DROP',col:'#4da3ff',hold:false},
-{k:'give',x:cx-d*1.25,y:cy-d*1.3,r:26*ts,label:'LT',cap:'SHARE',col:'#b57bff',hold:true},
-{k:'chat',x:vw/2+58,y:37,r:22,label:'💬',cap:'',col:'#8fa6ff',hold:false}
+{k:'give',x:cx-d*1.25,y:cy-d*1.3,r:26*ts,label:'LT',cap:'SHARE',col:'#b57bff',hold:true}
 ]};
 }
 function tHit(x,y){
@@ -475,7 +477,6 @@ else{tc.btn.grab=true;tc.gt=performance.now();tc.bid[e.pointerId]='grab'}
 }
 else if(b.hold){tc.btn[b.k]=true;tc.bid[e.pointerId]=b.k}
 else if(b.k==='drop')dropSelected();
-else if(b.k==='chat')openChat();
 return;
 }
 if(tc.sid===null&&x<vw*0.55){tc.sid=e.pointerId;tc.act=true;tc.ox=x;tc.oy=y;tc.vx=tc.vy=0}
@@ -1822,9 +1823,12 @@ if(S.phase==='won'){S.winT+=dt;if(S.winT>2.6){S.phase='board';showBoard()}}
 else if(S.phase==='boom'){S.winT+=dt;if(S.winT>3.4){S.phase='board';showBoard()}}
 }
 
+let chatBtnState='none';
 function frame(ts){
 const dt=Math.min(0.05,(ts-lastT)/1000||0.016);lastT=ts;
 navPoll();tick(dt);draw();
+const cbv=S.mode==='menu'||S.setOpen?'none':'block';
+if(cbv!==chatBtnState){chatBtnState=cbv;$('chatBtn').style.display=cbv}
 requestAnimationFrame(frame);
 }
 
@@ -2084,6 +2088,7 @@ $('oskDel').onclick=()=>oskPress('DEL');
 $('oskCase').onclick=()=>{OSK.lower=!OSK.lower;oskRefresh()};
 $('oskDone').onclick=oskClose;
 $('cog').onclick=()=>setOpen(!S.setOpen);
+$('chatBtn').onclick=()=>openChat();
 $('closeSet').onclick=()=>setOpen(false);
 $('resetKeys').onclick=()=>{B=JSON.parse(JSON.stringify(DEFAULTS));saveBindings();S.rebind=null;renderSettings()};
 window.addEventListener('keydown',e=>{
