@@ -376,11 +376,11 @@ const room=L.rooms[k%nr];
 const x=rr(room.x0+100,room.x1-100),top=rnd()<0.5;
 const y=top?T+30:h-T-30;
 if(L.st.some(s=>Math.hypot(s.x-x,s.y-y)<220))continue;
-L.st.push({x,y,r:34,top,t:2.6+n*0.2});
+L.st.push({x,y,r:34,top,t:2.6+n*0.2,need:coopNeed(k,n)});
 keepOut.push({x:x-90,y:top?T:y-90,w:180,h:130});
 break;
 }
-if(L.st.length<=k){const room=L.rooms[k%nr];const top=k%2===0;L.st.push({x:(room.x0+room.x1)/2+k*20,y:top?T+30:h-T-30,r:34,top,t:2.6+n*0.2})}
+if(L.st.length<=k){const room=L.rooms[k%nr];const top=k%2===0;L.st.push({x:(room.x0+room.x1)/2+k*20,y:top?T+30:h-T-30,r:34,top,t:2.6+n*0.2,need:coopNeed(k,n)})}
 }
 {
 const room=L.rooms[nr-1],top=rnd()<0.5;
@@ -494,6 +494,15 @@ return{missing:[...names]};
 function invItem(id,slot){return S.items.find(it=>it.owner===id&&it.slot===slot)}
 function freeSlot(id){for(let i=0;i<SLOTS;i++)if(!invItem(id,i))return i;return -1}
 function myWeight(){let w=0;S.items.forEach(it=>{if(it.owner===S.myId)w+=(ITEMS[it.type]||{weight:0}).weight});return w}
+function coopNeed(k,n){
+if(n<3)return 1;
+if(n<6)return k%3===1?2:1;
+if(n<8)return k%3===0?1:2;
+return k%3===0?1:k%3===1?2:3;
+}
+function activeCount(){let c=0;S.players.forEach(p=>{if(!p.spec)c++});return Math.max(1,c)}
+function stNeed(i){const s=S.L&&S.L.st[i];return s?Math.min(s.need||1,activeCount()):1}
+function stCount(i){let c=0;S.players.forEach(p=>{if(p.rep===i&&!p.spec)c++});return c}
 function allDone(){return S.stDone.length>0&&S.stDone.every(Boolean)}
 
 function makePlayer(id,name,color,score){return{id,name,color,score:score||0,rd:0,x:0,y:0,vx:0,vy:0,tx:0,ty:0,a:0,wa:0,th:0,rep:-1,rr:1,stun:0,ang:0,sel:0,fuel:1,att:null,charge:0,nograb:0,sound:0}}
@@ -619,7 +628,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 }
 
 function setupRound(lvl,seed){
-tReset();S.seed=seed;S.midWait=false;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
+tReset();S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
 S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
@@ -1136,6 +1145,8 @@ const res=[...S.players.values()].map(p=>({id:p.id,name:p.name,color:p.color,rd:
 emit({t:'boom',res,lvl:S.lvl});
 return;
 }
+const rc={};
+for(const p of S.players.values())if(p.rep>=0&&p.rep<1000&&!p.spec)rc[p.rep]=(rc[p.rep]||0)+1;
 for(const p of S.players.values()){
 if(p.rep>=1000){
 const fi=p.rep-1000;
@@ -1143,7 +1154,7 @@ if(!S.fTaken.has(fi)){
 S.fProg[fi]+=dt*p.rr/FUELT;
 if(S.fProg[fi]>=1){S.fProg[fi]=0;handleFuel(p.id,fi)}
 }
-}else if(p.rep>=0&&!S.stDone[p.rep]){
+}else if(p.rep>=0&&!S.stDone[p.rep]&&rc[p.rep]>=stNeed(p.rep)){
 S.stProg[p.rep]+=dt*p.rr/L.st[p.rep].t;
 S.contrib[p.rep][p.id]=1;
 if(S.stProg[p.rep]>=1)stationDone(p.rep,p.id);
@@ -1860,7 +1871,15 @@ ctx.strokeStyle='#4cd964';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ct
 }
 if(!done){
 let c=0,sp=0;S.players.forEach(q=>{if(q.rep===i){c++;sp+=q.rr}});
-if(c>=2)txt('x'+sp.toFixed(1)+' TEAMWORK',0,s.top?64:-64,15,'#7affc8','center','900');
+const nd=stNeed(i);
+if(nd>1){
+const ok=c>=nd;
+ctx.fillStyle=ok?'#1f6b3a':'#6b4a12';ctx.strokeStyle=ok?'#7affc8':'#ffd93d';ctx.lineWidth=2.5;
+ctx.beginPath();ctx.arc(36,-24,15,0,6.3);ctx.fill();ctx.stroke();
+txt(String(nd),36,-23,18,'#fff','center','900');
+if(!ok)txt('NEEDS '+nd+' PLAYERS ('+c+'/'+nd+')',0,s.top?64:-64,14,'#ffd93d','center','900');
+}
+if(c>=2&&c>=nd)txt('x'+sp.toFixed(1)+' TEAMWORK',0,s.top?64:-64,15,'#7affc8','center','900');
 }
 ctx.restore();
 });
@@ -2136,6 +2155,7 @@ S.menuT+=dt;
 if(S.mode!=='game'||!S.L||!S.me){if(amb.g)amb.g.gain.value=0;return}
 S.time+=dt;
 ambUpdate(dt);
+if(S.coopToast&&S.time>=0){S.coopToast=false;if(activeCount()>1&&S.L.st.some((q,i)=>stNeed(i)>1))toast('Numbered panels need that many players at once','#ffd93d')}
 if(S.phase==='boom'){S.parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});S.parts=S.parts.filter(p=>p.life>0);S.shake=Math.max(0,S.shake-dt*20)}
 const me=S.me;
 if(me.spec){S.tut.cur=null}else{updateMe(dt);tutUpdate(dt)}

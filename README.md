@@ -129,3 +129,7 @@ A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass
 ## Install as an app
 
 On a phone, open the game link, then use Share and Add to Home Screen on iPhone, or the browser menu and Install app on Android. It launches full screen with no browser bars. The files manifest.webmanifest, icon-192.png, icon-512.png and apple-touch-icon.png must sit next to index.html.
+
+## Co-op panels
+
+From Level 3 on, some repair panels show a number badge. That is how many players must repair the panel at the same time. Levels 1 and 2 never need more than one player. The number never goes above the players actually in the round, so a small crew or a solo player can always finish. If anyone lets go, the repair resets.
