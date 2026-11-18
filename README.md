@@ -125,3 +125,7 @@ The whole game is `index.html`. Put it in any static host, such as GitHub Pages,
 ## Sound
 
 A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass line speeds up and gets louder as the self destruct timer runs down. Mute with your mute key.
+
+## Install as an app
+
+On a phone, open the game link, then use Share and Add to Home Screen on iPhone, or the browser menu and Install app on Android. It launches full screen with no browser bars. The files manifest.webmanifest, icon-192.png, icon-512.png and apple-touch-icon.png must sit next to index.html.
