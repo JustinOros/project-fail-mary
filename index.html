@@ -1641,20 +1641,11 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
-if(L.locks.length&&t>=0&&t<30&&L.n<=4)txt('Colored doors need the matching key. Carry the key and touch the door to unlock it.',vw/2,vh-146,15,'#ffd93d','center','600');
 if(allDone()&&t>=0&&S.phase==='play'){
 const ts=toolStatus();
 if(ts.missing.length)txt('TOOLS MISSING FROM REACTOR RING: '+ts.missing.join(', '),vw/2,vh*0.2,20,'#ff8a5c','center','900');
 else txt('ALL TOOLS IN PLACE. HOLD REPAIR',vw/2,vh*0.2,20,'#7affc8','center','900');
 }
-if(t>=0&&t<25&&L.n<=2&&tc.on){
-const hx=Math.max(vw*0.3,tGeom().right/2+30);
-txt('Drag on the left side to aim',hx,vh-150,14,'#cfd8ff','center','700');
-txt('Hold A at a wall, release to push off',hx,vh-130,14,'#cfd8ff','center','700');
-txt('Hold Y inside a panel or fuel ring',hx,vh-110,14,'#cfd8ff','center','700');
-txt('LT gives a friend fuel, X drops an item',hx,vh-90,14,'#cfd8ff','center','700');
-}
-else if(t>=0&&t<25&&L.n<=2)txt('Hold '+lab(B.grab[0])+' or click near a wall to grab. Release to push off toward your aim. Hold '+lab(B.repair[0])+' inside the ring at a red panel to repair. Let go or drift out and it resets. Fuel does not refill: hold repair inside the ring of a fuel box to capture it, or hold '+lab(B.give[0])+' near a friend to share yours.',vw/2,vh-120,15,'#cfd8ff','center','600');
 if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);
 txt('DEBRIS STORM INCOMING',vw/2,vh*0.2,30,'#ff6b6b','center','900');
