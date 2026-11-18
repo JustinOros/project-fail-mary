@@ -64,6 +64,10 @@ From level 2 on, some doorways between rooms are sealed with a colored lock. A k
 - Keys can be dropped and passed to friends like any other item.
 - Locked doors are shown on the minimap in their color.
 
+## The Blip-A
+
+The ship you are repairing is the Blip-A, and it is slowly rotating clockwise. Outside, a red planet, a tethered research spacecraft and a spacewalking astronaut drift past the hull in the other direction, so you can always tell the ship is spinning.
+
 ## Hazards
 
 Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you cannot grab, debris storms, black holes that suck you out and respawn you, and lights out darkness.
