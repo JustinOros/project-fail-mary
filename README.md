@@ -55,6 +55,15 @@ You float in zero gravity, so momentum is everything.
 - Tools are heavy. Every tool you carry makes your thrusters weaker, lowers your top speed, weakens your push off, and burns fuel faster. Dropping tools at the reactor ring is a good way to ferry them.
 - More item types will be added later.
 
+## Colored doors and keys
+
+From level 2 on, some doorways between rooms are sealed with a colored lock. A key of the same color is lying somewhere in the ship, always in a part you can reach before that door.
+
+- Pick up a key by touching it. It goes into your inventory and has no weight.
+- Carry the key and touch the matching door to unlock it for everyone. The key is used up.
+- Keys can be dropped and passed to friends like any other item.
+- Locked doors are shown on the minimap in their color.
+
 ## Hazards
 
 Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you cannot grab, debris storms, black holes that suck you out and respawn you, and lights out darkness.
