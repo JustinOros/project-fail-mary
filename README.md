@@ -133,3 +133,7 @@ On a phone, open the game link, then use Share and Add to Home Screen on iPhone,
 ## Co-op panels
 
 From Level 3 on, some repair panels show a number badge. That is how many players must repair the panel at the same time. Levels 1 and 2 never need more than one player. The number never goes above the players actually in the round, so a small crew or a solo player can always finish. If anyone lets go, the repair resets.
+
+## Emotes
+
+Press V (or tap the SOS button at the top on a phone) to open the emote wheel, then click or tap an emote, or press 1 to 6. Everyone sees a bubble above you, and if you are off screen it shows at the screen edge pointing your way. On a controller, D-pad up sends Help here and D-pad down sends Got it. There is a short cooldown so nobody can spam.

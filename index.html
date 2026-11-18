@@ -79,6 +79,12 @@ tr.win td{background:rgba(255,217,61,.12)}
 #cog{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:40;width:46px;height:46px;border-radius:50%;padding:0;font-size:24px;background:rgba(10,16,34,.85);border:1px solid #3c4d85}
 #specBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:40;display:none;align-items:center;gap:10px;background:rgba(10,16,34,.88);border:1px solid #3c4d85;border-radius:14px;padding:8px 12px;font-size:15px;color:#cfd8ff}
 #specBar button{padding:8px 14px;font-size:15px;margin:0}
+#emoBtn{position:fixed;left:calc(50% + 112px);top:14px;transform:translateX(-50%);z-index:40;width:46px;height:46px;border-radius:50%;padding:0;font-size:22px;background:rgba(10,16,34,.85);border:1px solid #3c4d85}
+#emoWheel{position:fixed;left:50%;top:50%;width:0;height:0;z-index:60;display:none}
+#emoWheel button{position:absolute;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;padding:0;font-size:30px;line-height:1.05;background:rgba(10,16,34,.94);border:2px solid #4c63b0;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#emoWheel button small{font-size:11px;font-weight:700;color:#cfd8ff;margin-top:2px}
+#emoWheel .emoHub{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(10,16,34,.7);border:1px solid #3c4d85}
+@media (pointer:coarse){#emoWheel button{width:72px;height:72px;margin:-36px 0 0 -36px;font-size:26px}}
 #chatBtn{position:fixed;left:calc(50% + 58px);top:14px;transform:translateX(-50%);z-index:40;width:46px;height:46px;border-radius:50%;padding:0;font-size:22px;background:rgba(10,16,34,.85);border:1px solid #3c4d85}
 #chatBtn:hover{transform:translateX(-50%) translateY(-1px)}
 #cog:hover{transform:translateX(-50%) rotate(60deg)}
@@ -128,6 +134,8 @@ tr.win td{background:rgba(255,217,61,.12)}
 
 <button id="cog" title="Settings">⚙️</button>
 <button id="chatBtn" title="Chat" style="display:none">💬</button>
+<button id="emoBtn" title="Emotes (V)" style="display:none">🆘</button>
+<div id="emoWheel"><div class="emoHub"></div></div>
 <div id="settings" class="screen hidden">
 <div class="card">
 <h2>SETTINGS</h2>
@@ -234,7 +242,7 @@ const mouse={x:0,y:0,l:false,r:false};
 const tc={on:!!((window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||navigator.maxTouchPoints>0||'ontouchstart' in window),sid:null,ox:0,oy:0,vx:0,vy:0,act:false,lat:false,gt:0,btn:{grab:false,thr:false,rep:false,give:false},bid:{}};
 let vw=0,vh=0,dpr=1,lastT=0;
 
-const S={
+const S={emo:{},
 mode:'menu',phase:'lobby',isHost:false,solo:false,myId:null,me:null,
 players:new Map(),peer:null,conns:new Map(),hostConn:null,code:'',
 lvl:0,L:null,time:-3,lastCount:99,
@@ -280,6 +288,14 @@ if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t0+d);
 g.gain.setValueAtTime(vol||0.08,t0);g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
 o.connect(g);g.connect(a.destination);o.start(t0);o.stop(t0+d+0.02);
 }
+const EMOTES=[
+{e:'🆘',l:'Help here'},
+{e:'👍',l:'Got it'},
+{e:'🔧',l:'Repair here'},
+{e:'⛽',l:'Need fuel'},
+{e:'⚠️',l:'Watch out'},
+{e:'📍',l:'Go here'}
+];
 const amb={on:false,g:null,lg:null,beat:0,step:0};
 function ambInit(){
 const a=audio();
@@ -628,7 +644,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 }
 
 function setupRound(lvl,seed){
-tReset();S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
+tReset();S.emo={};S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
 S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
@@ -1182,6 +1198,54 @@ for(const c of S.conns.values())if(c.open)c.send(m);
 }
 function sendLobby(){emit({t:'lobby',ps:[...S.players.values()].map(p=>({id:p.id,name:p.name,color:p.color,sc:p.score,rdy:p.id==='H'||!!p.ready,sp:!!p.spec}))})}
 
+function handleEmo(id,k){
+const p=S.players.get(id);
+if(!p||k<0||k>=EMOTES.length)return;
+const now=performance.now();
+if(p.emoAt&&now-p.emoAt<1200)return;
+p.emoAt=now;
+emit({t:'emo',id,k});
+}
+function sendEmote(k){
+if(S.mode!=='game'||!S.me)return;
+if(S.isHost)handleEmo(S.myId,k);
+else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'emo',k});
+}
+function emoOpen(v){
+S.emoOpen=v;
+$('emoWheel').style.display=v?'block':'none';
+}
+function buildEmoWheel(){
+const w=$('emoWheel');
+const rad=Math.min(130,Math.min(window.innerWidth,window.innerHeight)*0.3);
+EMOTES.forEach((m,i)=>{
+const a=-Math.PI/2+i*2*Math.PI/EMOTES.length;
+const b=document.createElement('button');
+b.style.left=Math.cos(a)*rad+'px';b.style.top=Math.sin(a)*rad+'px';
+b.innerHTML=m.e+'<small>'+m.l+'</small>';
+b.onclick=ev=>{ev.stopPropagation();sendEmote(i);emoOpen(false)};
+w.appendChild(b);
+});
+}
+function drawEmotes(sc){
+const now=performance.now();
+for(const id in S.emo){
+const o=S.emo[id],age=(now-o.t)/1000;
+if(age>4){delete S.emo[id];continue}
+const p=S.players.get(id);if(!p){delete S.emo[id];continue}
+const em=EMOTES[o.k];
+let sx=(p.x-S.cam.x)*sc+vw/2,sy=(p.y-S.cam.y)*sc+vh/2-40*sc;
+const m=44,off=sx<m||sx>vw-m||sy<m||sy>vh-m;
+if(off){sx=Math.max(m,Math.min(vw-m,sx));sy=Math.max(m+40,Math.min(vh-m-60,sy))}
+const a=age>3.4?(4-age)/0.6:1,pop=age<0.2?0.6+2*age:1;
+ctx.save();ctx.globalAlpha=a;ctx.translate(sx,sy);ctx.scale(pop,pop);
+ctx.fillStyle='rgba(10,16,34,.88)';ctx.strokeStyle=COLORS[p.color];ctx.lineWidth=3;
+ctx.beginPath();ctx.arc(0,0,22,0,6.3);ctx.fill();ctx.stroke();
+ctx.font='24px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(em.e,0,2);
+txt(p.name+': '+em.l,Math.max(80-sx,Math.min(vw-80-sx,0)),36,13,'#fff','center','800');
+ctx.restore();
+}
+}
 function specList(){return [...S.players.values()].filter(q=>q!==S.me&&!q.spec)}
 function specTarget(){const l=specList();return l.length?l[((S.specIdx||0)%l.length+l.length)%l.length]:null}
 function specNext(){S.specIdx=(S.specIdx||0)+1}
@@ -1282,6 +1346,10 @@ break}
 case 'tk':{
 if(m.id===S.myId){sfx.star();toast('Picked up '+itemName({type:m.type,meta:m.meta}),'#ffd93d')}
 break}
+case 'emo':{
+S.emo[m.id]={k:m.k,t:performance.now()};
+if(m.id!==S.myId)tone(780,0.1,'sine',0.06,1.4);
+break}
 case 'chat':{
 const q=S.players.get(m.id);
 S.chat.push({name:q?q.name:'?',color:q?q.color:0,text:String(m.text).slice(0,80),at:performance.now()});
@@ -1312,7 +1380,7 @@ function hostRecv(conn,m){
 const id=conn.peer;
 const seen=S.players.get(id);if(seen)seen.lastSeen=performance.now();
 if(m.t==='ping')return;
-if(seen&&seen.spec&&m.t!=='jump'&&m.t!=='chat'&&m.t!=='hello')return;
+if(seen&&seen.spec&&m.t!=='jump'&&m.t!=='chat'&&m.t!=='hello'&&m.t!=='emo')return;
 if(m.t==='hello'){
 const inLobby=S.phase==='lobby'&&S.mode==='lobby';
 const inGame=!S.solo&&S.mode==='game';
@@ -1352,6 +1420,8 @@ sendLobby();
 conn.send({t:'wait'});
 }
 }else sendLobby();
+}else if(m.t==='emo'){
+handleEmo(id,m.k|0);
 }else if(m.t==='jump'){
 const jp=S.players.get(id);
 if(jp&&jp.spec&&S.mode==='game'&&S.phase==='play'&&S.L){
@@ -1474,6 +1544,7 @@ b.style.display=c?'':'none';
 if(c)b.textContent='REJOIN '+c;
 }
 function leave(msg){
+S.emo={};emoOpen(false);
 if(msg!=='Disconnected from host')clearLast();
 S.mode='menu';
 try{S.conns.forEach(c=>c.close())}catch(e){}
@@ -2098,7 +2169,7 @@ ctx.fillStyle='rgba(8,12,24,.7)';ctx.fillRect(bx-3,by-3,206,24);
 ctx.fillStyle='#1c2a55';ctx.fillRect(bx,by,200,18);
 ctx.fillStyle=me.fuel>0.25?'#4da3ff':'#ff6b6b';ctx.fillRect(bx,by,200*me.fuel,18);
 txt(me.fuel<=0.001?'NO FUEL: find a fuel box':'THRUSTER FUEL',bx+100,by+9,12,'#fff','center');
-drawMini(L);
+drawMini(L);drawEmotes(sc);
 if(me.spec){const tg=specTarget();txt('WATCHING'+(tg?': '+tg.name:''),vw/2,110,18,'#cfd8ff','center','800')}
 else{drawArrows(L,sc);drawHotbar();drawTut(L,sc)}
 if(t<0){
@@ -2198,12 +2269,14 @@ if(S.phase==='won'){S.winT+=dt;if(S.winT>2.6){S.phase='board';showBoard()}}
 else if(S.phase==='boom'){S.winT+=dt;if(S.winT>3.4){S.phase='board';showBoard()}}
 }
 
-let chatBtnState='none',specBarState='none',specNameState='';
+let emoBtnState='none',chatBtnState='none',specBarState='none',specNameState='';
 function frame(ts){
 const dt=Math.min(0.05,(ts-lastT)/1000||0.016);lastT=ts;
 navPoll();tick(dt);draw();
 const cbv=S.mode==='menu'||S.setOpen?'none':'block';
 if(cbv!==chatBtnState){chatBtnState=cbv;$('chatBtn').style.display=cbv}
+const ebv=S.mode==='game'&&!S.setOpen?'block':'none';
+if(ebv!==emoBtnState){emoBtnState=ebv;$('emoBtn').style.display=ebv;if(ebv==='none')emoOpen(false)}
 const sb=S.mode==='game'&&S.me&&S.me.spec&&S.phase==='play';
 const sbv=sb?'flex':'none';
 if(sbv!==specBarState){specBarState=sbv;$('specBar').style.display=sbv}
@@ -2376,6 +2449,8 @@ fire.forEach(k=>{
 if(k==='left'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+SLOTS-1)%SLOTS;
 if(k==='right'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+1)%SLOTS;
 if(k==='x')dropSelected();
+if(k==='up'&&NAV.held[k]&&NAV.held[k].first)sendEmote(0);
+if(k==='down'&&NAV.held[k]&&NAV.held[k].first)sendEmote(1);
 });
 }
 return;
@@ -2432,6 +2507,9 @@ takeName();
 const c=loadLast();
 if(c)joinLobby(c);
 };
+$('emoBtn').onclick=e=>{e.stopPropagation();emoOpen(!S.emoOpen)};
+window.addEventListener('pointerdown',e=>{if(S.emoOpen&&!e.target.closest('#emoWheel')&&e.target.id!=='emoBtn')emoOpen(false)},true);
+buildEmoWheel();
 $('specNext').onclick=()=>specNext();
 $('specJump').onclick=()=>specJump();
 $('join').onclick=()=>{
@@ -2501,6 +2579,12 @@ window.addEventListener('keydown',e=>{
 if(S.rebind){e.preventDefault();finishRebind(e.code);return}
 if(S.setOpen){if(e.code==='Escape')setOpen(false);return}
 if(e.target&&e.target.tagName==='INPUT')return;
+if(S.emoOpen&&S.mode==='game'){
+const dg=/^Digit([1-6])$/.exec(e.code);
+if(dg){e.preventDefault();sendEmote(parseInt(dg[1],10)-1);emoOpen(false);return}
+if(e.code==='Escape'||e.code==='KeyV'){e.preventDefault();emoOpen(false);return}
+}
+if(e.code==='KeyV'&&S.mode==='game'&&S.me&&!S.chatOpen){e.preventDefault();emoOpen(true);return}
 if(e.code==='Enter'&&(S.mode==='game'||S.mode==='lobby')){e.preventDefault();openChat();return}
 keys[e.code]=true;
 if(S.mode==='game'&&bound(e.code))e.preventDefault();
