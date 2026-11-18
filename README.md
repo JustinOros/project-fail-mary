@@ -145,3 +145,7 @@ On the Level Complete screen every player except the host gets an I am ready but
 ## Invite code in game
 
 The lobby code appears at the top of the screen during a round. Any player can tap it to copy the invite link and send it to a friend at any time. New players join as spectators and can jump in.
+
+## Hull breach events
+
+From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Carry a repair tool (keys do not count) to the hole and hold the repair key for about 3 seconds to patch it; more players patch faster, and the tool is not used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.
