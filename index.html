@@ -349,6 +349,13 @@ function stormWarn(L,t){return L.storm&&t>=11&&((t-11)%22)<3}
 function sparkPos(s,t){return{x:s.cx+Math.cos(s.fx*t+s.ph)*s.ax,y:s.cy+Math.sin(s.fy*t+s.ph*1.3)*s.ay}}
 function ventOn(v,t){return((t+v.ph)%v.per)<v.on}
 function ventWarn(v,t){const m=(t+v.ph)%v.per;return m>v.per-0.9}
+function toolStatus(){
+const f=S.L.fin,ids=new Set();
+(S.tools||[]).forEach(id=>{if(id&&S.players.has(id))ids.add(id)});
+const need=[],missing=[];
+ids.forEach(id=>{const p=S.players.get(id);need.push(p);if(Math.hypot(p.x-f.x,p.y-f.y)>=f.r+RR)missing.push(p)});
+return{need,missing};
+}
 function allDone(){return S.stDone.length>0&&S.stDone.every(Boolean)}
 
 function makePlayer(id,name,color,score){return{id,name,color,score:score||0,rd:0,x:0,y:0,vx:0,vy:0,tx:0,ty:0,a:0,wa:0,th:0,rep:-1,rr:1,stun:0,ang:0,fuel:1,att:null,charge:0,nograb:0,sound:0}}
@@ -390,7 +397,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.contrib=S.L.st.map(()=>({}));
+S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.tools=S.L.st.map(()=>null);S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -625,9 +632,10 @@ if(S.stProg[p.rep]>=1)stationDone(p.rep,p.id);
 }
 }
 const all=allDone();
+const ready=all&&toolStatus().missing.length===0;
 for(const p of S.players.values()){
 let v=S.finProg[p.id]||0;
-if(all&&p.rep===-2)v+=dt*p.rr/L.fin.t;else v=Math.max(0,v-dt*1.2);
+if(ready&&p.rep===-2)v+=dt*p.rr/L.fin.t;else v=Math.max(0,v-dt*1.2);
 S.finProg[p.id]=v;
 if(v>=1&&S.phase==='play'){roundWin(p.id);break}
 }
@@ -666,8 +674,9 @@ case 'sd':{
 S.stDone[m.i]=true;S.stProg[m.i]=1;
 const s=S.L.st[m.i],p=S.players.get(m.by);
 burst(s.x,s.y,'#4cd964',30,320,0.9);sfx.done();S.shake=Math.max(S.shake,6);
-toast((p?p.name:'Someone')+' repaired panel '+(m.i+1)+'/'+S.L.st.length,'#7affc8');
-if(allDone())toast('FINAL REPAIR UNLOCKED! Reach the reactor','#c58bff');
+S.tools[m.i]=m.by;
+toast((p?p.name:'Someone')+' repaired panel '+(m.i+1)+'/'+S.L.st.length+' and took the tool','#7affc8');
+if(allDone())toast('FINAL REPAIR UNLOCKED! Everyone holding a tool must stand in the reactor ring','#c58bff');
 break}
 case 'pk':{
 S.taken.add(m.i);S.pending.delete(m.i);
@@ -932,7 +941,8 @@ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ex,ey,3.6,0,6.3);ctx.fill();
 ctx.fillStyle='#10162e';ctx.beginPath();ctx.arc(ex+dx*1.3,ey+dy*1.3,1.9,0,6.3);ctx.fill();
 }
 ctx.restore();
-txt(p.name,p.x,p.y-32,isMe?14:12,isMe?'#ffffff':'#cfd8ff','center');
+const tc=(S.tools||[]).filter(id=>id===p.id).length;
+txt(p.name+(tc?' '+'🔧'.repeat(tc):''),p.x,p.y-32,isMe?14:12,isMe?'#ffffff':'#cfd8ff','center');
 if(p.stun>0){ctx.font='20px serif';ctx.textAlign='center';ctx.fillText('💫',p.x+Math.cos(S.time*8)*10,p.y-24)}
 }
 
@@ -999,7 +1009,7 @@ ctx.save();ctx.translate(f.x,f.y);
 const pulse=0.6+0.4*Math.sin(t*4);
 const g=ctx.createRadialGradient(0,0,10,0,0,120);g.addColorStop(0,open?'rgba(197,139,255,'+(0.35+0.25*pulse)+')':'rgba(90,100,130,.2)');g.addColorStop(1,'rgba(0,0,0,0)');
 ctx.fillStyle=g;ctx.fillRect(-130,-130,260,260);
-if(open){ctx.strokeStyle='rgba(197,139,255,.35)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.beginPath();ctx.arc(0,0,f.r+RR,0,6.3);ctx.stroke();ctx.setLineDash([])}
+if(open){ctx.strokeStyle=toolStatus().missing.length?'rgba(255,90,90,.6)':'rgba(197,139,255,.35)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.beginPath();ctx.arc(0,0,f.r+RR,0,6.3);ctx.stroke();ctx.setLineDash([])}
 ctx.fillStyle='#1a2340';ctx.strokeStyle=open?'#c58bff':'#5a6488';ctx.lineWidth=4;
 ctx.beginPath();ctx.roundRect(-58,-34,116,68,14);ctx.fill();ctx.stroke();
 ctx.font='34px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(open?'⚛️':'🔒',0,3);
@@ -1160,6 +1170,11 @@ const c=Math.ceil(-t);
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
+if(allDone()&&t>=0&&S.phase==='play'){
+const ts=toolStatus();
+if(ts.missing.length)txt('TOOLS MISSING FROM REACTOR RING: '+ts.missing.map(q=>q.name).join(', '),vw/2,vh*0.2,20,'#ff8a5c','center','900');
+else txt('ALL TOOLS IN PLACE. HOLD REPAIR',vw/2,vh*0.2,20,'#7affc8','center','900');
+}
 if(t>=0&&t<25&&L.n<=2)txt('Hold '+lab(B.grab[0])+' or click near a wall to grab. Release to push off toward your aim. Hold '+lab(B.repair[0])+' inside the ring at a red panel to repair. Let go or drift out and it resets. Fuel does not refill: hold repair inside the ring of a fuel box to capture it, or hold '+lab(B.give[0])+' near a friend to share yours.',vw/2,vh-70,15,'#cfd8ff','center','600');
 if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);

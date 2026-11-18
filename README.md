@@ -20,7 +20,8 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 ## How a round works
 
 - Repair every red panel in the ship. Panels repair faster the more players work on them together.
-- Once all panels are fixed, the reactor unlocks. The first player to finish the final repair wins the round and gets the most points.
+- Whoever finishes a panel takes its tool, shown as a wrench next to their name.
+- Once all panels are fixed, the reactor unlocks. The final repair only progresses while every player holding a tool is standing inside the reactor ring, no matter who is doing the repair. The first player to finish the final repair wins the round and gets the most points.
 - A self destruct timer is running. If time runs out, the ship explodes and everyone loses.
 - After each round a scoreboard shows everyone's points until the host starts the next level.
 - There are 10 levels, and each one is bigger and nastier than the last.
