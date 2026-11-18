@@ -1146,7 +1146,8 @@ const me=S.me,t=S.time;
 txt('LEVEL '+L.n+' / '+MAXL+'  '+L.name.toUpperCase(),16,22,18,'#fff','left','800');
 const done=S.stDone.filter(Boolean).length;
 txt(allDone()?'FINAL REPAIR: REACH THE REACTOR':'Panels repaired '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
-if(t>=0&&S.phase!=='boom'){
+if(S.phase==='won'||S.phase==='board')txt('SELF DESTRUCT HALTED',16,70,16,'#7affc8','left','900');
+if(t>=0&&S.phase==='play'){
 const rem=Math.max(0,L.limit-t),low=rem<=20;
 const pul=low?0.6+0.4*Math.sin(t*10):1;
 txt('SELF DESTRUCT '+Math.floor(rem/60)+':'+String(Math.floor(rem%60)).padStart(2,'0'),16,70,low?24:16,low?'rgba(255,70,70,'+pul+')':'#ffb347','left','900');
