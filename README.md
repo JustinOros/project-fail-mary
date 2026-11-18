@@ -9,8 +9,8 @@ No install, no server, no account. It is a single `index.html` file.
 ## Playing with friends
 
 1. One player opens the page, sets a name and color, and clicks **Create Lobby**.
-2. Copy the 4 letter code with the clipboard button and send it to friends.
-3. Friends open the same page, enter the code, and click **Join Lobby**.
+2. Click the clipboard button to copy an invite link and send it to friends.
+3. Friends click the link, pick a name and color, and click **Join**. They can also open the page, type the 4 letter code, and click **Join Lobby**.
 4. The host clicks **Start**.
 
 You can also click **Play Solo** to try the game alone.

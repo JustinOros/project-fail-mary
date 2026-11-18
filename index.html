@@ -77,9 +77,10 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div class="card">
 <h1>PROJECT FAIL MARY</h1>
 <div class="sub">Fix the ship before it blows. It will take a Hail Mary.</div>
+<div class="sub" id="invite" style="display:none"></div>
 <input id="name" maxlength="12" placeholder="Your name" autocomplete="off">
 <div id="swatches"></div>
-<div class="row"><button id="solo">PLAY SOLO</button><button id="create">CREATE LOBBY</button></div>
+<div class="row" id="topRow"><button id="solo">PLAY SOLO</button><button id="create">CREATE LOBBY</button></div>
 <div class="row"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button id="join">JOIN LOBBY</button></div>
 <div id="err"></div>
 <div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Hold the repair key near a broken panel. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, Y repair, X drop, LT share fuel. Select or View opens chat. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
@@ -89,8 +90,8 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div id="lobby" class="screen hidden">
 <div class="card">
 <h2>LOBBY</h2>
-<div class="codeRow"><div id="lobbyCode"></div><button id="copyCode" class="ghost" title="Copy code">📋</button></div>
-<div class="sub" id="copyMsg">Share this code with your friends</div>
+<div class="codeRow"><div id="lobbyCode"></div><button id="copyCode" class="ghost" title="Copy invite link">📋</button></div>
+<div class="sub" id="copyMsg">Copy the invite link and send it to your friends</div>
 <div id="swatches2"></div>
 <div id="plist"></div>
 <button id="start" class="go">START</button>
@@ -1980,6 +1981,20 @@ for(let i=0;i<420;i++)S.stars.push({x:Math.random(),y:Math.random(),z:Math.rando
 resize();window.addEventListener('resize',resize);
 window.addEventListener('orientationchange',()=>{setTimeout(resize,150);setTimeout(resize,500)});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
+(function(){
+let j='';
+try{j=(new URLSearchParams(location.search).get('join')||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4)}catch(e){}
+if(j.length===4){
+$('code').value=j;
+$('topRow').style.display='none';
+$('code').style.display='none';
+$('invite').style.display='block';
+$('invite').textContent='You are invited to lobby '+j+'. Pick a name and color, then join.';
+$('join').style.flex='1';
+$('join').textContent='JOIN';
+$('join').classList.add('go');
+}
+})();
 $('solo').onclick=()=>{takeName();startHost(true)};
 $('create').onclick=()=>{takeName();startHost(false)};
 $('join').onclick=()=>{
@@ -1999,10 +2014,14 @@ if(S.solo){leave('');return}
 emit({t:'tolobby'});sendLobby();
 }else startRound(S.boardRes.lvl+1);
 };
+function inviteLink(){
+return location.href.split(/[?#]/)[0]+'?join='+S.code;
+}
 $('copyCode').onclick=()=>{
-const done=()=>{const m=$('copyMsg');m.textContent='Code copied to clipboard';setTimeout(()=>{m.textContent='Share this code with your friends'},1800)};
-const fallback=()=>{const t=document.createElement('textarea');t.value=S.code;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(t);done()};
-if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(S.code).then(done).catch(fallback);else fallback();
+const link=inviteLink();
+const done=()=>{const m=$('copyMsg');m.textContent='Invite link copied. Send it to your friends';setTimeout(()=>{m.textContent='Copy the invite link and send it to your friends'},2200)};
+const fallback=()=>{const t=document.createElement('textarea');t.value=link;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(t);done()};
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(link).then(done).catch(fallback);else fallback();
 };
 $('chatIn').addEventListener('keydown',e=>{
 if(e.code==='Enter'||e.code==='NumpadEnter'){e.preventDefault();closeChat(true)}
