@@ -137,3 +137,11 @@ From Level 3 on, some repair panels show a number badge. That is how many player
 ## Emotes
 
 Press V (or tap the SOS button at the top on a phone) to open the emote wheel, then click or tap an emote, or press 1 to 6. Everyone sees a bubble above you, and if you are off screen it shows at the screen edge pointing your way. On a controller, D-pad up sends Help here and D-pad down sends Got it. There is a short cooldown so nobody can spam.
+
+## Between levels
+
+On the Level Complete screen every player except the host gets an I am ready button and a Leave button, so someone can take a break or head out without holding up the group. The host sees a checkmark or hourglass next to each player and a Kick button on each row. Start Level shows how many players are ready. If someone is not ready the host can hold the Start button for 3 seconds to start anyway. Kicked players cannot rejoin that game.
+
+## Invite code in game
+
+The lobby code appears at the top of the screen during a round. Any player can tap it to copy the invite link and send it to a friend at any time. New players join as spectators and can jump in.
