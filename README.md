@@ -39,7 +39,7 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 You float in zero gravity, so momentum is everything.
 
-- Hold **grab** next to a wall to stick to it.
+- Hold **grab** next to a wall to stick to it. Fly into a friend while holding grab and you cling to them and ride along as they move. Release to push off them. You cannot grab someone who is already riding another player.
 - Release grab to push off toward where you are aiming. Holding grab longer before releasing gives a harder push.
 - Thrusters give you extra control, but fuel is limited and does not refill on its own.
 - Hold **repair** inside the dashed ring around a panel to work on it. Letting go, drifting out of the ring, or getting stunned resets the progress back to zero.

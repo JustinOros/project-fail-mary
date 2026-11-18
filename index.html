@@ -626,12 +626,18 @@ const live=t>=0&&S.phase!=='board'&&S.phase!=='boom';
 me.stun=Math.max(0,me.stun-dt);
 me.nograb=Math.max(0,me.nograb-dt);
 me.th=0;
-me.rep=-1;me.rr=me.att?1:0.5;
-if(!live){me.vx=me.vy=0;me.a=me.att?1:0;return}
+me.rep=-1;me.rr=me.att&&!me.att.pid?1:0.5;
+if(!live){me.vx=me.vy=0;me.a=me.att?(me.att.pid?2:1):0;return}
 const can=me.stun<=0;
 const grab=can&&inp.grab;
+if(me.att&&me.att.pid){
+const co=S.players.get(me.att.pid);
+if(!co||co.stun>0||!can||co.a===2){me.att=null;me.charge=0;me.nograb=0.2}
+else{me.x=co.x+me.att.nx*R*2;me.y=co.y+me.att.ny*R*2;collide(me,false)}
+}
 if(me.att){
-me.vx=me.vy=0;
+if(me.att.pid){const co=S.players.get(me.att.pid);me.vx=co?co.vx||0:0;me.vy=co?co.vy||0:0}
+else{me.vx=me.vy=0}
 if(!can){me.att=null;me.charge=0}
 else if(grab){me.charge=Math.min(1,me.charge+dt/0.9)}
 else{
@@ -640,7 +646,8 @@ const d=dx*a.nx+dy*a.ny;
 if(d<0.15){dx-=d*a.nx;dy-=d*a.ny;dx+=a.nx*0.35;dy+=a.ny*0.35}
 const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
 const sp=(70+430*me.charge)/(1+0.12*wt);
-me.vx=dx*sp;me.vy=dy*sp;me.x+=a.nx*3;me.y+=a.ny*3;
+const cr=a.pid?S.players.get(a.pid):null;
+me.vx=dx*sp+(cr?cr.vx||0:0);me.vy=dy*sp+(cr?cr.vy||0:0);me.x+=a.nx*3;me.y+=a.ny*3;
 sfx.launch(me.charge);burst(me.x-a.nx*R,me.y-a.ny*R,'#9fc4ff',5+Math.floor(me.charge*8),120,0.4);
 me.att=null;me.charge=0;me.nograb=0.12;
 }
@@ -691,6 +698,11 @@ break;
 S.players.forEach(o=>{
 if(o===me)return;
 const dx=me.x-o.x,dy=me.y-o.y,d=Math.hypot(dx,dy);
+if(grab&&me.nograb<=0&&!me.att&&o.a!==2&&d<R*2+6&&d>0.001){
+me.att={nx:dx/d,ny:dy/d,pid:o.id};me.vx=o.vx||0;me.vy=o.vy||0;me.charge=0;
+sfx.grab();burst((me.x+o.x)/2,(me.y+o.y)/2,'#bcd2ff',6,80,0.35);
+return;
+}
 if(d<R*2&&d>0.001&&!me.att){
 const nx=dx/d,ny=dy/d,rv=(me.vx-o.vx)*nx+(me.vy-o.vy)*ny,f=o.a?1:0.5;
 if(rv<0){const k=1.85*(-rv)*f;me.vx+=k*nx;me.vy+=k*ny;sfx.bump();burst((me.x+o.x)/2,(me.y+o.y)/2,'#ffffff',4,80,0.3)}
@@ -763,7 +775,7 @@ const tg=me.rep===-2?L.fin:me.rep>=1000?L.fuel[me.rep-1000]:L.st[me.rep];
 burst(tg.x,tg.y,'#7affc8',3,110,0.4);
 }
 }
-me.a=me.att?1:0;
+me.a=me.att?(me.att.pid?2:1):0;
 me.wa=me.att?Math.atan2(-me.att.ny,-me.att.nx):0;
 }
 
