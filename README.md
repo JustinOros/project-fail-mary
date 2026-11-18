@@ -51,7 +51,7 @@ You float in zero gravity, so momentum is everything.
 
 - The row of slots at the bottom of the screen is your inventory. New items, including tools, go into the first free slot.
 - Select a slot with the number keys 1 to 9, the mouse wheel, a click, or left and right on the D-pad. The selected item is equipped and shown in your crawler's hand.
-- Drop the selected item with Q, right click on a slot, or Y on a controller. Dropped items float away, and anyone can pick them up by touching them. You cannot pick your own drop back up for about a second and a half.
+- Drop the selected item with Q, right click on a slot, or X on a controller. Dropped items float away, and anyone can pick them up by touching them. You cannot pick your own drop back up for about a second and a half.
 - Tools are heavy. Every tool you carry makes your thrusters weaker, lowers your top speed, weakens your push off, and burns fuel faster. Dropping tools at the reactor ring is a good way to ferry them.
 - More item types will be added later.
 
@@ -79,10 +79,10 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | Aim | Mouse, WASD or arrow keys | Left stick |
 | Grab and push off | Space or left click | A or LB |
 | Thrusters | Shift or right click | RT, RB or B |
-| Repair and capture | E or F | X |
+| Repair and capture | E or F | Y |
 | Share fuel | G | LT |
 | Select inventory slot | 1 to 9 or mouse wheel | D-pad left and right |
-| Drop item | Q or right click a slot | Y |
+| Drop item | Q or right click a slot | X |
 | Chat | Enter | Select or View |
 | Mute | M | |
 
