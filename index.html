@@ -137,7 +137,7 @@ const COLORS=['#ff4d4d','#ff9f1a','#ffd93d','#4cd964','#2ee6d6','#4da3ff','#b57b
 const NAMES=['Docking Bay','Crew Quarters','Mess Hall','Cargo Hold','Engineering','Hydroponics','Blackout Deck','Reactor Corridor','Breach Zone','The Core'];
 const PREFIX='zerogcrew-';
 const MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9;
-const ITEMS={tool:{name:'Repair Tool',icon:'🔧',weight:1},key:{name:'Key',icon:'🔑',weight:0}};
+const ITEMS={tool:{name:'Repair Tool',icon:'🔧',weight:1,kick:210},key:{name:'Key',icon:'🔑',weight:0,kick:90}};
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
 const KEYNAME=['Red','Blue','Green','Yellow','Purple'];
 function rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+a+')'}
@@ -191,7 +191,7 @@ for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;
 if(o)renderSettings();
 }
 const mouse={x:0,y:0,l:false,r:false};
-const tc={on:!!((window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||navigator.maxTouchPoints>0||'ontouchstart' in window),sid:null,ox:0,oy:0,vx:0,vy:0,act:false,btn:{grab:false,thr:false,rep:false,give:false},bid:{}};
+const tc={on:!!((window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||navigator.maxTouchPoints>0||'ontouchstart' in window),sid:null,ox:0,oy:0,vx:0,vy:0,act:false,lat:false,gt:0,btn:{grab:false,thr:false,rep:false,give:false},bid:{}};
 let vw=0,vh=0,dpr=1,lastT=0;
 
 const S={
@@ -442,7 +442,7 @@ for(const b of g.btns)if(Math.hypot(x-b.x,y-b.y)<=b.r+8*g.ts)return b;
 return null;
 }
 function tReset(){
-tc.sid=null;tc.act=false;tc.vx=tc.vy=0;
+tc.sid=null;tc.act=false;tc.vx=tc.vy=0;tc.lat=false;
 for(const k in tc.btn)tc.btn[k]=false;
 tc.bid={};
 }
@@ -454,7 +454,11 @@ const hi=hotbarHit(x,y);
 if(hi>=0){S.me.sel=hi;return}
 const b=tHit(x,y);
 if(b){
-if(b.hold){tc.btn[b.k]=true;tc.bid[e.pointerId]=b.k}
+if(b.k==='grab'){
+if(tc.lat){tc.lat=false;tc.btn.grab=false;tc.bid[e.pointerId]='grabx'}
+else{tc.btn.grab=true;tc.gt=performance.now();tc.bid[e.pointerId]='grab'}
+}
+else if(b.hold){tc.btn[b.k]=true;tc.bid[e.pointerId]=b.k}
 else if(b.k==='drop')dropSelected();
 else if(b.k==='chat')openChat();
 return;
@@ -470,7 +474,11 @@ tc.vx=dx*k/br;tc.vy=dy*k/br;
 function tUp(e){
 if(e.pointerId===tc.sid){tc.sid=null;tc.act=false;tc.vx=tc.vy=0}
 const k=tc.bid[e.pointerId];
-if(k){tc.btn[k]=false;delete tc.bid[e.pointerId]}
+if(k){
+if(k==='grab'){if(performance.now()-tc.gt<250)tc.lat=true;else tc.btn.grab=false}
+else if(k!=='grabx')tc.btn[k]=false;
+delete tc.bid[e.pointerId];
+}
 }
 function drawTouch(){
 const g=tGeom(),ts=g.ts;
@@ -491,7 +499,7 @@ ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.3);ctx.fill();
 ctx.strokeStyle=b.col;ctx.lineWidth=on?4:2.5;ctx.stroke();
 if(b.cap){
 txt(b.label,b.x,b.y-b.r*0.12,b.k==='give'?b.r*0.55:b.r*0.8,'#fff','center','900');
-txt(b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
+txt(b.k==='grab'&&tc.lat?'LOCKED':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
 }else txt(b.label,b.x,b.y,b.r*1.0,'#fff','center','800');
 }
 if(vh>vw)txt('Turn your phone sideways for a wider view',vw/2,vh*0.12,15,'#ffd93d','center','700');
@@ -775,7 +783,7 @@ const it=invItem(id,slot),p=S.players.get(id);
 if(!it||!p)return;
 const l=Math.hypot(dx,dy)||1;
 it.owner=null;it.slot=-1;it.x=p.x;it.y=p.y;
-it.vx=p.vx*0.5+dx/l*110;it.vy=p.vy*0.5+dy/l*110;
+it.vx=p.vx*0.5+dx/l*320;it.vy=p.vy*0.5+dy/l*320;
 it.last=id;it.nt=S.time+1.5;
 }
 function handleUnlock(id,k){
@@ -824,6 +832,7 @@ const it=invItem(S.myId,me.sel);
 if(!it)return;
 const dx=Math.cos(me.ang),dy=Math.sin(me.ang);
 if(S.isHost)handleDrop(S.myId,me.sel,dx,dy);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'drop',slot:me.sel,dx,dy});
+if(!me.att&&me.stun<=0){const kk=(ITEMS[it.type]||{kick:100}).kick;me.vx-=dx*kk;me.vy-=dy*kk;burst(me.x+dx*14,me.y+dy*14,'#ffffff',5,90,0.25)}
 tone(260,0.12,'triangle',0.08,0.6);
 }
 function roundWin(id){
