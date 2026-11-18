@@ -68,6 +68,12 @@ From level 2 on, some doorways between rooms are sealed with a colored lock. A k
 
 The ship you are repairing is the Blip-A, and it is slowly rotating clockwise. Outside, a red planet, a tethered research spacecraft and a spacewalking astronaut drift past the hull in the other direction, so you can always tell the ship is spinning.
 
+## Tutorial hints
+
+New players get short tips as they play, with a gold arrow and ring pointing at what to do next: aiming, grabbing a wall, launching, finding a panel, repairing, low fuel, keys and doors, and the final repair. Each tip shows once, and the button labels match your device (keyboard, controller or touch).
+
+Open the cog and use **Tutorial hints** to turn them off. Turning them back on makes every tip show again.
+
 ## Hazards
 
 Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you cannot grab, debris storms, black holes that suck you out and respawn you, and lights out darkness.

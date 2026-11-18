@@ -57,7 +57,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 #chatBox{top:10px;bottom:auto;left:10px;width:calc(100vw - 20px)}
 #chatBox input{flex:1;min-width:0}
 #chatSend,#chatX{display:block}
-#chatLog{top:70px;bottom:auto;left:200px;width:calc(100vw - 440px);max-width:420px}
+#chatLog{top:170px;bottom:auto;left:200px;width:calc(100vw - 440px);max-width:420px}
 }
 .gpf{outline:3px solid #ffd93d !important;outline-offset:3px;box-shadow:0 0 18px #ffd93d !important}
 #osk{z-index:60;background:rgba(2,4,12,.75)}
@@ -114,8 +114,8 @@ tr.win td{background:rgba(255,217,61,.12)}
 <button id="chatBtn" title="Chat" style="display:none">💬</button>
 <div id="settings" class="screen hidden">
 <div class="card">
-<h2>CONTROLS</h2>
-<div class="sub">Click a key slot, then press the new key. Backspace clears a slot. Esc cancels.</div>
+<h2>SETTINGS</h2>
+<div class="sub">Tutorial hints guide new players. Click a key slot, then press the new key to rebind it. Backspace clears a slot. Esc cancels.</div>
 <div id="setRows"></div>
 <div class="row"><button id="resetKeys" class="ghost">Reset defaults</button><button id="closeSet">Done</button></div>
 </div>
@@ -180,6 +180,11 @@ const dn=a=>B[a].some(c=>c&&keys[c]);
 const bound=c=>{for(const a in B)if(B[a].includes(c))return true;return false};
 function renderSettings(){
 const box=$('setRows');box.textContent='';
+const tr=document.createElement('div');tr.className='sr';
+const tn=document.createElement('div');tn.className='nm';tn.textContent='Tutorial hints';tr.appendChild(tn);
+const tb=document.createElement('button');tb.className='kb';tb.textContent=S.tut.on?'ON':'OFF';
+tb.onclick=()=>{setTut(!S.tut.on);renderSettings()};
+tr.appendChild(tb);box.appendChild(tr);
 ACTIONS.forEach(([a,name])=>{
 const r=document.createElement('div');r.className='sr';
 const n=document.createElement('div');n.className='nm';n.textContent=name;r.appendChild(n);
@@ -220,7 +225,7 @@ stDone:[],stProg:[],finProg:{},taken:new Set(),pending:new Set(),contrib:[],
 winner:null,winT:0,boardRes:null,
 name:'',color:0,
 cam:{x:0,y:0},shake:0,flash:0,
-items:[],nextUid:1,takeT:{},chat:[],chatOpen:false,toasts:[],parts:[],sendT:0,menuT:0,gotSeq:0,stars:[],warnOn:false,tickT:0,thrT:0,shown:0
+items:[],nextUid:1,takeT:{},chat:[],chatOpen:false,toasts:[],parts:[],sendT:0,menuT:0,gotSeq:0,tut:{on:true,seen:{},cur:null,f:{},prevAtt:false,angAcc:0,lastAng:0,usePad:false},stars:[],warnOn:false,tickT:0,thrT:0,shown:0
 };
 
 function mulberry(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
@@ -557,7 +562,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 }
 
 function setupRound(lvl,seed){
-tReset();S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
+tReset();S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
 S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
@@ -791,6 +796,193 @@ p.score+=20;p.rd+=20;
 emit({t:'pk',i,id});
 }
 
+function tutSave(){
+try{localStorage.setItem('zg-tut',S.tut.on?'1':'0');localStorage.setItem('zg-tutseen',JSON.stringify(S.tut.seen))}catch(e){}
+}
+function tutLoad(){
+try{
+S.tut.on=localStorage.getItem('zg-tut')!=='0';
+const v=JSON.parse(localStorage.getItem('zg-tutseen')||'{}');
+S.tut.seen=v&&typeof v==='object'?v:{};
+}catch(e){}
+}
+function setTut(on){
+S.tut.on=on;S.tut.cur=null;
+if(on)S.tut.seen={};
+tutSave();
+}
+function tl(a){
+const pd={grab:'A',thr:'B',rep:'Y',drop:'X',give:'LT'};
+if(tc.on||S.tut.usePad)return pd[a];
+const m={grab:'grab',thr:'thrust',rep:'repair',drop:'drop',give:'give'}[a];
+return lab(B[m][0]);
+}
+function tutNearPanel(){
+const me=S.me;let b=null,bd=1e9;
+S.L.st.forEach((q,i)=>{
+if(S.stDone[i])return;
+const d=Math.hypot(me.x-q.x,me.y-q.y);
+if(d<bd){bd=d;b={x:q.x,y:q.y,r:q.r,d,i}}
+});
+return b;
+}
+function tutNearWall(){
+const me=S.me;let b=null,bd=1e9;
+for(const w of S.L.walls){
+if(w.door!==undefined||w.slick)continue;
+const cx=Math.max(w.x,Math.min(me.x,w.x+w.w)),cy=Math.max(w.y,Math.min(me.y,w.y+w.h));
+const d=Math.hypot(me.x-cx,me.y-cy);
+if(d<bd){bd=d;b={x:cx,y:cy,r:14,d}}
+}
+return b;
+}
+function tutNearFuel(){
+const me=S.me;let b=null,bd=1e9;
+S.L.fuel.forEach((k,i)=>{
+if(S.fTaken.has(i))return;
+const d=Math.hypot(me.x-k.x,me.y-k.y);
+if(d<bd){bd=d;b={x:k.x,y:k.y,r:26,d}}
+});
+return b;
+}
+function tutNearStar(){
+const me=S.me;let b=null,bd=1e9;
+S.L.pick.forEach((k,i)=>{
+if(S.taken.has(i))return;
+const d=Math.hypot(me.x-k.x,me.y-k.y);
+if(d<bd){bd=d;b={x:k.x,y:k.y,r:22,d}}
+});
+return b;
+}
+function tutInRing(){
+const q=tutNearPanel();
+return q&&q.d<q.r+RR*1.4?q:null;
+}
+function tutKey(){return S.items.find(it=>it.owner===S.myId&&it.type==='key')}
+function tutTool(){return S.items.find(it=>it.owner===S.myId&&it.type==='tool')}
+const TUT_HINTS=[
+{id:'aim',max:7,ok:()=>S.time<12,fin:()=>S.tut.angAcc>1.4,
+text:()=>tc.on?'Drag on the left side of the screen to aim. Your crawler points where you aim.':S.tut.usePad?'Use the left stick to aim. Your crawler points where you aim.':'Move your mouse to aim. Your crawler points where you aim.',
+target:()=>null},
+{id:'grab',max:14,ok:()=>S.time>=3&&!S.tut.f.grabbed&&!S.tut.f.thrust,fin:()=>S.tut.f.grabbed,
+text:()=>'There is no gravity. Fly to a wall and hold '+tl('grab')+(tc.on||S.tut.usePad?'':' or left click')+' to grab on.',
+target:()=>tutNearWall()},
+{id:'launch',max:14,ok:()=>S.tut.f.grabbed&&!S.tut.f.launched,fin:()=>S.tut.f.launched,
+text:()=>'Aim away from the wall, then let go of '+tl('grab')+' to launch. Hold longer for a harder push.',
+target:()=>null},
+{id:'fuel',max:16,urgent:true,ok:()=>S.me.fuel<0.35&&!!tutNearFuel(),fin:()=>S.me.fuel>0.6,
+text:()=>'Low on fuel! Fly into a blue fuel box. A friend can also share fuel: stand near them and hold '+tl('give')+'.',
+target:()=>tutNearFuel()},
+{id:'thrust',max:10,ok:()=>S.tut.f.launched&&!S.tut.f.thrust&&S.time>20&&!tutInRing(),fin:()=>S.tut.f.thrust,
+text:()=>'Hold '+tl('thr')+' to fire your thrusters and steer in the air. Fuel is limited.',
+target:()=>null},
+{id:'panel',max:16,ok:()=>(S.tut.f.launched||S.tut.f.thrust)&&!tutInRing()&&!allDone()&&!S.stDone.some(Boolean),fin:()=>!!tutInRing(),
+text:()=>'Fix every red panel before the self destruct timer runs out. Fly to the nearest one.',
+target:()=>tutNearPanel()},
+{id:'repair',max:18,ok:()=>!!tutInRing()&&!allDone(),fin:()=>S.stDone.some(Boolean),
+text:()=>'Hold '+tl('rep')+' and stay inside the circle until the bar fills. More friends in the circle makes it faster.',
+target:()=>tutNearPanel()},
+{id:'tool',max:11,ok:()=>!!tutTool(),fin:()=>false,
+text:()=>'You got a Repair Tool. The final repair needs every tool inside the reactor ring. Tools are heavy, so hand them off or drop them near the reactor.',
+target:()=>null},
+{id:'throw',max:9,ok:()=>!!S.items.find(it=>it.owner===S.myId)&&!S.tut.f.threw&&S.tut.seen.tool,fin:()=>S.tut.f.threw,
+text:()=>'Tip: press '+tl('drop')+' to throw an item. It sends you the opposite way, which is a quick way to travel.',
+target:()=>null},
+{id:'key',max:16,ok:()=>!!tutKey()&&!!S.L.walls.find(w=>w.door===tutKey().meta&&!w.open),fin:()=>!tutKey(),
+text:()=>'You found a '+KEYNAME[tutKey().meta]+' key. Touch the '+KEYNAME[tutKey().meta]+' door to open it.',
+target:()=>{const k=tutKey(),w=k&&S.L.walls.find(q=>q.door===k.meta&&!q.open);return w?{x:w.x+w.w/2,y:w.y+w.h/2,r:30,d:Math.hypot(S.me.x-(w.x+w.w/2),S.me.y-(w.y+w.h/2))}:null}},
+{id:'star',max:8,ok:()=>S.tut.f.launched&&!!tutNearStar()&&tutNearStar().d<500,fin:()=>S.taken.size>0,
+text:()=>'Fly into stars for bonus points.',
+target:()=>tutNearStar()},
+{id:'final',max:30,urgent:true,ok:()=>allDone(),fin:()=>false,
+text:()=>'All panels fixed! Bring every tool into the glowing reactor ring, then hold '+tl('rep')+' together.',
+target:()=>({x:S.L.fin.x,y:S.L.fin.y,r:S.L.fin.r,d:Math.hypot(S.me.x-S.L.fin.x,S.me.y-S.L.fin.y)})},
+{id:'hurry',max:7,urgent:true,ok:()=>S.L.limit-S.time<30&&!allDone(),fin:()=>false,
+text:()=>'Hurry! The ship self destructs in under 30 seconds.',
+target:()=>null},
+{id:'chat',max:8,ok:()=>S.players.size>1&&S.time>40,fin:()=>false,
+text:()=>'Tip: tap the chat bubble at the top to talk to your crew.',
+target:()=>null}
+];
+function tutUpdate(dt){
+const T=S.tut;
+if(!T.on||!S.me||!S.L||S.phase!=='play'||S.time<0){T.cur=null;return}
+const me=S.me,f=T.f;
+const da=Math.abs(Math.atan2(Math.sin(me.ang-T.lastAng),Math.cos(me.ang-T.lastAng)));
+T.angAcc+=da;T.lastAng=me.ang;
+if(me.att)f.grabbed=true;
+if(T.prevAtt&&!me.att&&Math.hypot(me.vx,me.vy)>90)f.launched=true;
+T.prevAtt=!!me.att;
+if(me.th)f.thrust=true;
+const gp=pad();
+if(gp&&gp.buttons.some(b=>b.pressed))T.usePad=true;
+if(T.cur){
+const h=T.cur.h;T.cur.t+=dt;
+let done=false;
+try{done=h.fin()||T.cur.t>h.max}catch(e){done=true}
+if(done){T.seen[h.id]=1;tutSave();T.cur=null}
+else{let okk=false;try{okk=h.ok()}catch(e){}if(!okk)T.cur=null}
+}
+if(!T.cur||(T.cur.t>2.5&&!T.cur.h.urgent)){
+for(const h of TUT_HINTS){
+if(T.seen[h.id])continue;
+if(T.cur&&(!h.urgent||h===T.cur.h))continue;
+let okk=false;try{okk=h.ok()}catch(e){}
+if(okk){T.cur={h,t:0};break}
+}
+}
+}
+function tutWrap(text,maxW,size){
+ctx.font='700 '+size+'px system-ui,-apple-system,Segoe UI,sans-serif';
+const words=text.split(' '),lines=[];let line='';
+for(const w of words){
+const t=line?line+' '+w:w;
+if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w}else line=t;
+}
+if(line)lines.push(line);
+return lines;
+}
+function drawTut(L,sc){
+const T=S.tut;
+if(!T.on||!T.cur||S.phase!=='play'||S.chatOpen)return;
+const h=T.cur.h,me=S.me,t=S.menuT;
+let tg=null;try{tg=h.target()}catch(e){}
+if(tg){
+const tx=(tg.x-S.cam.x)*sc+vw/2,ty=(tg.y-S.cam.y)*sc+vh/2;
+const px=(me.x-S.cam.x)*sc+vw/2,py=(me.y-S.cam.y)*sc+vh/2;
+const on=tx>30&&tx<vw-30&&ty>30&&ty<vh-30;
+const pul=0.5+0.5*Math.sin(t*5);
+if(on){
+const rr=Math.max(22,(tg.r||20)*sc)+pul*6;
+ctx.save();ctx.strokeStyle='#ffd93d';ctx.lineWidth=3;ctx.globalAlpha=0.55+0.4*pul;
+ctx.beginPath();ctx.arc(tx,ty,rr,0,6.3);ctx.stroke();ctx.restore();
+}
+const dx=tx-px,dy=ty-py,dl=Math.hypot(dx,dy);
+if(dl>110*sc||!on){
+const a=Math.atan2(dy,dx),off=(52+Math.sin(t*6)*5)*Math.max(0.8,sc);
+ctx.save();ctx.translate(px+Math.cos(a)*off,py+Math.sin(a)*off);ctx.rotate(a);
+ctx.fillStyle='#ffd93d';ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=3;
+ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(-8,-13);ctx.lineTo(-3,0);ctx.lineTo(-8,13);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();
+}
+if(!on){
+const cx=vw/2,cy=vh/2,ex=tx-cx,ey=ty-cy;
+const k=Math.min((vw/2-40)/Math.abs(ex||1e-6),(vh/2-40)/Math.abs(ey||1e-6));
+ctx.save();ctx.translate(cx+ex*k,cy+ey*k);ctx.rotate(Math.atan2(ey,ex));
+ctx.fillStyle='#ffd93d';ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=3;
+ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(-12,-14);ctx.lineTo(-6,0);ctx.lineTo(-12,14);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore();
+}
+}
+const size=tc.on?14:16,maxW=Math.min(vw*(tc.on?0.5:0.6),520);
+const lines=tutWrap(h.text(),maxW,size);
+const lh=size+5,bw=Math.max(...lines.map(l=>ctx.measureText(l).width))+32,bh=lines.length*lh+22;
+const bx=vw/2-bw/2,by=tc.on?70:76;
+ctx.save();
+ctx.fillStyle='rgba(8,12,28,.88)';ctx.strokeStyle='#ffd93d';ctx.lineWidth=2;
+ctx.beginPath();ctx.roundRect(bx,by,bw,bh,12);ctx.fill();ctx.stroke();
+ctx.restore();
+txt('TIP',bx+14,by+9,11,'#ffd93d','left','900');
+lines.forEach((l,i)=>txt(l,vw/2,by+12+lh*(i+0.5)+4,size,'#ffffff','center','700'));
+}
 function stationDone(i,by){
 const ids=Object.keys(S.contrib[i]);
 ids.forEach(id=>{const p=S.players.get(id);if(p){const g=id===by?60:40;p.score+=g;p.rd+=g}});
@@ -855,6 +1047,7 @@ function dropSelected(){
 const me=S.me;if(!me||S.phase==='board'||S.time<0)return;
 const it=invItem(S.myId,me.sel);
 if(!it)return;
+S.tut.f.threw=true;
 const dx=Math.cos(me.ang),dy=Math.sin(me.ang);
 if(S.isHost)handleDrop(S.myId,me.sel,dx,dy);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'drop',slot:me.sel,dx,dy});
 if(!me.att&&me.stun<=0){const kk=(ITEMS[it.type]||{kick:100}).kick;me.vx-=dx*kk;me.vy-=dy*kk;burst(me.x+dx*14,me.y+dy*14,'#ffffff',5,90,0.25)}
@@ -1728,7 +1921,7 @@ ctx.fillStyle='rgba(8,12,24,.7)';ctx.fillRect(bx-3,by-3,206,24);
 ctx.fillStyle='#1c2a55';ctx.fillRect(bx,by,200,18);
 ctx.fillStyle=me.fuel>0.25?'#4da3ff':'#ff6b6b';ctx.fillRect(bx,by,200*me.fuel,18);
 txt(me.fuel<=0.001?'NO FUEL: find a fuel box':'THRUSTER FUEL',bx+100,by+9,12,'#fff','center');
-drawMini(L);drawArrows(L,sc);drawHotbar();
+drawMini(L);drawArrows(L,sc);drawHotbar();drawTut(L,sc);
 if(t<0){
 const c=Math.ceil(-t);
 txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
@@ -1737,8 +1930,8 @@ txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
 if(allDone()&&t>=0&&S.phase==='play'){
 const ts=toolStatus();
-if(ts.missing.length)txt('TOOLS MISSING FROM REACTOR RING: '+ts.missing.join(', '),vw/2,vh*0.2,20,'#ff8a5c','center','900');
-else txt('ALL TOOLS IN PLACE. HOLD REPAIR',vw/2,vh*0.2,20,'#7affc8','center','900');
+if(ts.missing.length)txt('TOOLS MISSING FROM REACTOR RING: '+ts.missing.join(', '),vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#ff8a5c','center','900');
+else txt('ALL TOOLS IN PLACE. HOLD REPAIR',vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#7affc8','center','900');
 }
 if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);
@@ -1785,6 +1978,7 @@ S.time+=dt;
 if(S.phase==='boom'){S.parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});S.parts=S.parts.filter(p=>p.life>0);S.shake=Math.max(0,S.shake-dt*20)}
 const me=S.me;
 updateMe(dt);
+tutUpdate(dt);
 S.players.forEach(p=>{
 if(p===me)return;
 p.tx+=p.vx*dt;p.ty+=p.vy*dt;
@@ -2138,6 +2332,8 @@ window.addEventListener('pointerup',tUp);
 window.addEventListener('pointercancel',tUp);
 window.addEventListener('pointerup',e=>{if(e.button===2)mouse.r=false;else mouse.l=false});
 window.addEventListener('contextmenu',e=>e.preventDefault());
+tutLoad();
+window.addEventListener('keydown',()=>{S.tut.usePad=false},true);
 show('menu');
 requestAnimationFrame(frame);
 }
