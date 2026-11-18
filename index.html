@@ -50,7 +50,15 @@ tr.win td{background:rgba(255,217,61,.12)}
 #chatLog{position:fixed;left:16px;bottom:100px;z-index:9;max-width:440px;display:flex;flex-direction:column;gap:3px;pointer-events:none;font-size:15px;text-shadow:0 1px 3px #000}
 .cl{background:rgba(6,10,24,.6);padding:3px 9px;border-radius:7px;word-break:break-word}
 #chatBox{position:fixed;left:16px;bottom:52px;z-index:70;width:min(440px,90vw)}
+#chatBox{gap:6px}
 #chatBox input{text-align:left;font-size:16px;padding:9px 12px}
+#chatSend,#chatX{display:none;padding:9px 14px;font-size:15px}
+@media (pointer:coarse){
+#chatBox{top:10px;bottom:auto;left:10px;width:calc(100vw - 20px)}
+#chatBox input{flex:1;min-width:0}
+#chatSend,#chatX{display:block}
+#chatLog{top:70px;bottom:auto;left:200px;width:calc(100vw - 440px);max-width:420px}
+}
 .gpf{outline:3px solid #ffd93d !important;outline-offset:3px;box-shadow:0 0 18px #ffd93d !important}
 #osk{z-index:60;background:rgba(2,4,12,.75)}
 #oskText{font-size:34px;letter-spacing:4px;min-height:48px;font-weight:800;color:#ffd93d}
@@ -71,7 +79,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <canvas id="c"></canvas>
 
 <div id="chatLog"></div>
-<div id="chatBox" style="display:none"><input id="chatIn" maxlength="80" placeholder="Type a message. Enter sends, Esc cancels" autocomplete="off"></div>
+<div id="chatBox" style="display:none"><input id="chatIn" maxlength="80" placeholder="Type a message" autocomplete="off" enterkeyhint="send"><button id="chatSend">SEND</button><button id="chatX" class="ghost">&#10005;</button></div>
 
 <div id="menu" class="screen">
 <div class="card">
@@ -1948,7 +1956,7 @@ d.appendChild(n);d.appendChild(t);box.appendChild(d);
 function openChat(){
 if(S.chatOpen)return;
 S.chatOpen=true;
-$('chatBox').style.display='block';
+$('chatBox').style.display='flex';
 for(const k in keys)keys[k]=false;
 mouse.l=mouse.r=false;tReset();
 $('chatIn').value='';$('chatIn').focus();renderChat();
@@ -2063,10 +2071,14 @@ const fallback=()=>{const t=document.createElement('textarea');t.value=link;t.st
 if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(link).then(done).catch(fallback);else fallback();
 };
 $('chatIn').addEventListener('keydown',e=>{
-if(e.code==='Enter'||e.code==='NumpadEnter'){e.preventDefault();closeChat(true)}
-else if(e.code==='Escape'){e.preventDefault();closeChat(false)}
+if(e.code==='Enter'||e.code==='NumpadEnter'||e.key==='Enter'){e.preventDefault();closeChat(true)}
+else if(e.code==='Escape'||e.key==='Escape'){e.preventDefault();closeChat(false)}
 });
-$('chatIn').addEventListener('blur',()=>closeChat(false));
+$('chatIn').addEventListener('blur',()=>{if(!tc.on)closeChat(false)});
+$('chatSend').addEventListener('pointerdown',e=>e.preventDefault());
+$('chatSend').addEventListener('mousedown',e=>e.preventDefault());
+$('chatSend').onclick=()=>closeChat(true);
+$('chatX').onclick=()=>closeChat(false);
 setInterval(renderChat,500);
 $('oskDel').onclick=()=>oskPress('DEL');
 $('oskCase').onclick=()=>{OSK.lower=!OSK.lower;oskRefresh()};
