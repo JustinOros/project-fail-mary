@@ -90,6 +90,15 @@ Click the cog at the top of the screen to rebind any keyboard key.
 
 In menus on a controller, use the D-pad or stick to move, A to select, B to go back, and Start to confirm. Selecting the name or code box opens a built in on screen keyboard.
 
+## Phones and tablets
+
+Touch controls appear automatically on a touchscreen. Play in landscape.
+
+- Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
+- GRAB, THRUST, REPAIR and SHARE are on the right. Hold them like the keyboard keys.
+- DROP drops the selected item. Tap a slot in the bottom bar to select it.
+- Tap the chat bubble next to the cog to type a message.
+
 ## Chat
 
 Press Enter in a lobby or during a game to type a message to everyone. On a controller, press Select or View to open the on screen keyboard, which includes a few emoji keys.
