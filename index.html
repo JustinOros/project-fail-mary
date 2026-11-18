@@ -143,7 +143,7 @@ const ICE=[
 {urls:['turn:freestun.net:3478','turns:freestun.net:5349'],username:'free',credential:'free'}
 ];
 const PEEROPT={config:{iceServers:ICE,iceCandidatePoolSize:4},debug:1};
-const MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9;
+const MINV=34,MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9;
 const ITEMS={tool:{name:'Repair Tool',icon:'🔧',weight:1,kick:210},key:{name:'Key',icon:'🔑',weight:0,kick:90}};
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
 const KEYNAME=['Red','Blue','Green','Yellow','Purple'];
@@ -646,7 +646,12 @@ const dx=b.x-me.x,dy=b.y-me.y,d=Math.hypot(dx,dy);
 if(d<b.pr&&d>1){const f=1500*Math.pow(1-d/b.pr,2);me.vx+=dx/d*f*dt;me.vy+=dy/d*f*dt}
 }
 const damp=1-0.08*dt;me.vx*=damp;me.vy*=damp;
-const sp=Math.hypot(me.vx,me.vy);
+let sp=Math.hypot(me.vx,me.vy);
+if(sp>=1){me.dx0=me.vx/sp;me.dy0=me.vy/sp}
+if(sp<MINV){
+const ux=me.dx0===undefined?Math.cos(me.ang):me.dx0,uy=me.dy0===undefined?Math.sin(me.ang):me.dy0;
+me.vx=ux*MINV;me.vy=uy*MINV;sp=MINV;
+}
 const cap=560/(1+0.08*wt);
 if(sp>cap){me.vx*=cap/sp;me.vy*=cap/sp}
 const steps=Math.max(1,Math.ceil(sp*dt/6));
