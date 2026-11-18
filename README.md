@@ -116,3 +116,12 @@ Works in current Chrome, Edge, Firefox and Safari. Xbox Edge works with a contro
 ## Hosting your own copy
 
 The whole game is `index.html`. Put it in any static host, such as GitHub Pages, and it works. It must be served over HTTPS for multiplayer to connect.
+
+## Spectating and rejoining
+
+- If you join a lobby while a round is running, you watch instead of being turned away. Click, tap or press Q and E to switch between players, then press JUMP IN (or J) to spawn into the round.
+- If you get disconnected, use the REJOIN button on the menu. You drop straight back into the round with your score kept.
+
+## Sound
+
+A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass line speeds up and gets louder as the self destruct timer runs down. Mute with your mute key.
