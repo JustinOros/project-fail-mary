@@ -136,6 +136,12 @@ const cv=$('c'),ctx=cv.getContext('2d');
 const COLORS=['#ff4d4d','#ff9f1a','#ffd93d','#4cd964','#2ee6d6','#4da3ff','#b57bff','#ff6bd6'];
 const NAMES=['Docking Bay','Crew Quarters','Mess Hall','Cargo Hold','Engineering','Hydroponics','Blackout Deck','Reactor Corridor','Breach Zone','The Core'];
 const PREFIX='zerogcrew-';
+const ICE=[
+{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']},
+{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'},
+{urls:['turn:freestun.net:3478','turns:freestun.net:5349'],username:'free',credential:'free'}
+];
+const PEEROPT={config:{iceServers:ICE,iceCandidatePoolSize:4},debug:1};
 const MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9;
 const ITEMS={tool:{name:'Repair Tool',icon:'🔧',weight:1,kick:210},key:{name:'Key',icon:'🔑',weight:0,kick:90}};
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
@@ -1037,7 +1043,7 @@ openPeerHost(0);
 }
 function openPeerHost(tries){
 const code=genCode();
-const peer=new Peer(PREFIX+code);
+const peer=new Peer(PREFIX+code,PEEROPT);
 S.peer=peer;
 peer.on('open',()=>{S.code=code;S.mode='lobby';S.phase='lobby';$('err').textContent='';show('lobby');renderLobby()});
 peer.on('error',e=>{
@@ -1054,15 +1060,15 @@ function joinLobby(code){
 if(typeof Peer==='undefined'){leave('Network library failed to load');return}
 S.isHost=false;S.solo=false;S.players.clear();
 $('err').textContent='Connecting...';
-const peer=new Peer();S.peer=peer;
-const to=setTimeout(()=>{if(!S.hostConn||!S.hostConn.open)leave('Could not connect to that lobby')},9000);
+const peer=new Peer(undefined,PEEROPT);S.peer=peer;
+const to=setTimeout(()=>{if(!S.hostConn||!S.hostConn.open)leave('Could not connect. Check the code, or try the other player hosting')},25000);
 peer.on('open',id=>{
 S.myId=id;
 const c=peer.connect(PREFIX+code,{reliable:true});S.hostConn=c;
 c.on('open',()=>{clearTimeout(to);S.code=code;$('err').textContent='';c.send({t:'hello',name:S.name,color:S.color})});
 c.on('data',onMsg);
 c.on('close',()=>{if(S.mode!=='menu')leave('Disconnected from host')});
-c.on('error',()=>{});
+c.on('error',e=>{clearTimeout(to);leave('Connection error ('+((e&&e.type)||'peer')+')')});
 });
 peer.on('error',e=>{clearTimeout(to);if(S.mode==='menu'&&$('err').textContent==='')return;leave(e.type==='peer-unavailable'?'Lobby not found':'Connection error ('+e.type+')')});
 }
