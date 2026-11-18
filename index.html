@@ -999,13 +999,27 @@ if(S.mode==='lobby')renderLobby();
 
 function hostRecv(conn,m){
 const id=conn.peer;
+const seen=S.players.get(id);if(seen)seen.lastSeen=performance.now();
+if(m.t==='ping')return;
 if(m.t==='hello'){
 if(S.phase!=='lobby'||S.mode!=='lobby'){conn.send({t:'busy'});setTimeout(()=>conn.close(),300);return}
+const cid=typeof m.cid==='string'?m.cid.slice(0,40):'';
+if(cid){
+for(const q of [...S.players.values()]){
+if(q.id!=='H'&&q.id!==id&&q.cid===cid){
+const oc=S.conns.get(q.id);
+hostDrop(q.id);
+try{if(oc)oc.close()}catch(e){}
+}
+}
+}
 if(S.players.size>=8){conn.send({t:'full'});setTimeout(()=>conn.close(),300);return}
 const taken=new Set([...S.players.values()].map(p=>p.color));
 let c=m.color;if(taken.has(c)||c<0||c>7){c=0;while(taken.has(c))c++}
 S.conns.set(id,conn);
-S.players.set(id,makePlayer(id,String(m.name||'Astro').slice(0,12)||'Astro',c,0));
+const np=makePlayer(id,String(m.name||'Astro').slice(0,12)||'Astro',c,0);
+np.cid=cid;np.lastSeen=performance.now();
+S.players.set(id,np);
 sendLobby();
 }else if(m.t==='prof'){
 const p=S.players.get(id);if(!p)return;
@@ -1069,6 +1083,26 @@ conn.on('close',()=>hostDrop(conn.peer));
 conn.on('error',()=>hostDrop(conn.peer));
 });
 }
+function clientId(){
+let v='';
+try{v=localStorage.getItem('zg-cid')||''}catch(e){}
+if(!v){
+v=Math.random().toString(36).slice(2,12)+Date.now().toString(36);
+try{localStorage.setItem('zg-cid',v)}catch(e){}
+}
+return v;
+}
+setInterval(()=>{
+if(S.isHost){
+const now=performance.now();
+for(const q of [...S.players.values()]){
+if(q.id==='H'||!q.lastSeen)continue;
+if(now-q.lastSeen>15000){const oc=S.conns.get(q.id);hostDrop(q.id);try{if(oc)oc.close()}catch(e){}}
+}
+}else if(S.hostConn&&S.hostConn.open){
+try{S.hostConn.send({t:'ping'})}catch(e){}
+}
+},2000);
 function joinLobby(code){
 if(typeof Peer==='undefined'){leave('Network library failed to load');return}
 S.isHost=false;S.solo=false;S.players.clear();
@@ -1078,7 +1112,7 @@ const to=setTimeout(()=>{if(!S.hostConn||!S.hostConn.open)leave('Could not conne
 peer.on('open',id=>{
 S.myId=id;
 const c=peer.connect(PREFIX+code,{reliable:true});S.hostConn=c;
-c.on('open',()=>{clearTimeout(to);S.code=code;$('err').textContent='';c.send({t:'hello',name:S.name,color:S.color})});
+c.on('open',()=>{clearTimeout(to);S.code=code;$('err').textContent='';c.send({t:'hello',name:S.name,color:S.color,cid:clientId()})});
 c.on('data',onMsg);
 c.on('close',()=>{if(S.mode!=='menu')leave('Disconnected from host')});
 c.on('error',e=>{clearTimeout(to);leave('Connection error ('+((e&&e.type)||'peer')+')')});
