@@ -92,11 +92,11 @@ In menus on a controller, use the D-pad or stick to move, A to select, B to go b
 
 ## Phones and tablets
 
-Touch controls appear automatically on a touchscreen. Play in landscape.
+Touch controls appear automatically on a touchscreen. Landscape gives the widest view, and the game adjusts when you rotate your phone.
 
 - Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
-- GRAB, THRUST, REPAIR and SHARE are on the right. Hold them like the keyboard keys.
-- DROP drops the selected item. Tap a slot in the bottom bar to select it.
+- The buttons on the right copy an Xbox controller: A grabs, B thrusts, Y repairs and X drops the selected item. LT shares fuel. Hold them like the keyboard keys.
+- Tap a slot in the bottom bar to select an item.
 - Tap the chat bubble next to the cog to type a message.
 
 ## Chat
