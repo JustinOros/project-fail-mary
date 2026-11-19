@@ -783,7 +783,8 @@ if(id!=='H'&&conn&&conn.open)conn.send({t:'spawn',x:p.x,y:p.y,keep:1});
 return;
 }
 const sp=L.spawn[Math.floor(Math.random()*L.spawn.length)];
-S.items.forEach(it=>{if(it.owner===id&&it.type!=='printer'){it.owner=null;it.slot=-1;it.x=sp.x;it.y=sp.y;it.vx=it.vy=0}});
+p.lost=[];
+S.items.forEach(it=>{if(it.owner===id&&it.type!=='printer'){it.owner=null;it.slot=-1;it.x=sp.x;it.y=sp.y;it.vx=it.vy=0;p.lost.push(it.uid)}});
 p.out=true;p.outUntil=performance.now()+3000;p.rx=sp.x;p.ry=sp.y;p.att=null;p.rep=-1;
 emit({t:'ejd',id});
 }
@@ -793,6 +794,16 @@ S.players.forEach(p=>{
 if(!p.out||!p.outUntil||now<p.outUntil)return;
 p.out=false;p.outUntil=0;
 p.x=p.tx=p.rx;p.y=p.ty=p.ry;p.vx=p.vy=0;p.fuel=0.4;p.att=null;p.stun=0;
+if(p.lost&&p.lost.length){
+const ls=S.items.filter(it=>!it.owner&&p.lost.includes(it.uid)&&Math.hypot(it.x-p.rx,it.y-p.ry)<60);
+const a0=Math.random()*6.283;
+ls.forEach((it,i)=>{
+const a=a0+i*6.283/ls.length+(Math.random()-0.5)*0.4,sp=26+Math.random()*22;
+it.x=p.rx+Math.cos(a)*34;it.y=p.ry+Math.sin(a)*34;
+it.vx=Math.cos(a)*sp;it.vy=Math.sin(a)*sp;
+});
+p.lost=null;
+}
 if(p.id==='H'){S.cam.x=p.x;S.cam.y=p.y;toast('Back aboard','#7affc8')}
 else{const c=S.conns.get(p.id);if(c&&c.open)c.send({t:'spawn',x:p.rx,y:p.ry,fu:0.4})}
 });
