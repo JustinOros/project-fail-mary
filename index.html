@@ -239,8 +239,15 @@ r.appendChild(b);box.appendChild(r);
 const r=document.createElement('div');r.className='sr';
 const n=document.createElement('div');n.className='nm';n.textContent='Test ship voice';r.appendChild(n);
 const b=document.createElement('button');b.className='kb';b.textContent='TEST';
-b.onclick=()=>{aiSpeak('Systems check. Amaze.',true);renderSettings();setTimeout(()=>{if(S.setOpen)renderSettings()},1800)};
+b.onclick=()=>{aiSpeak('Systems check. Amaze.',true);renderSettings();setTimeout(()=>{if(S.setOpen)renderSettings()},2000);setTimeout(()=>{if(S.setOpen)renderSettings()},3600)};
 r.appendChild(b);box.appendChild(r);
+const r2=document.createElement('div');r2.className='sr';
+const n2=document.createElement('div');n2.className='nm';n2.textContent='Ship voice choice (click to change)';r2.appendChild(n2);
+const b2=document.createElement('button');b2.className='kb';
+aiInit();
+b2.textContent=S.aiDef?'Browser default':(S.aiVN||'Auto');
+b2.onclick=()=>{aiCycle();aiSpeak('Systems check. Amaze.',true);renderSettings();setTimeout(()=>{if(S.setOpen)renderSettings()},2000)};
+r2.appendChild(b2);box.appendChild(r2);
 if(S.aiStatus){const t=document.createElement('div');t.className='sub';t.style.margin='2px 0 8px';t.textContent=(muted?'Sound is muted. ':'')+S.aiStatus;box.appendChild(t)}
 }
 ACTIONS.forEach(([a,name])=>{
@@ -1158,7 +1165,14 @@ boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boo
 };
 
 try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true}
+function aiInit(){
+if(S.aiInit)return;
+S.aiInit=1;
+try{if(localStorage.getItem('zg-vname2')==='__default')S.aiDef=true}catch(e){}
+}
 function aiPick(){
+aiInit();
+if(S.aiDef)return null;
 if(!window.speechSynthesis)return null;
 const all=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
 if(!all.length)return null;
@@ -1175,32 +1189,53 @@ try{localStorage.setItem('zg-vname2',v.name)}catch(e){}
 return v;
 }
 if(window.speechSynthesis){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{aiPick()}}catch(e){}}
-let aiUtter=null,aiTimer=0;
-function aiSpeak(text,force){
+let aiUtter=null,aiTimer=0,aiWatch2=0;
+function aiSpeak(text,force,retry){
 if(!window.speechSynthesis){S.aiStatus='Voice is not supported in this browser';return}
 if(!force&&(!S.aiVoice||muted))return;
 try{
-clearTimeout(aiTimer);
+clearTimeout(aiTimer);clearTimeout(aiWatch2);
 const busy=speechSynthesis.speaking||speechSynthesis.pending;
 if(busy)speechSynthesis.cancel();
 const go=()=>{
 try{
 speechSynthesis.resume();
 const u=new SpeechSynthesisUtterance(text);
-u.rate=0.92;u.pitch=0.55;u.volume=1;u.lang='en-US';
+u.rate=S.aiDef?1:0.92;u.pitch=S.aiDef?1:0.55;u.volume=1;u.lang='en-US';
 const v=aiPick();
 if(v){u.voice=v;u.lang=v.lang}
-const nm=v?v.name:'default voice';
+const nm=v?v.name:'browser default voice';
+let started=false;
 S.aiStatus='Asked the browser to speak with '+nm;
-u.onstart=()=>{S.aiStatus='Speaking with '+nm};
-u.onend=()=>{if(aiUtter===u)aiUtter=null;S.aiStatus='Last line played with '+nm};
+u.onstart=()=>{started=true;S.aiStatus='Speaking with '+nm};
+u.onend=()=>{started=true;if(aiUtter===u)aiUtter=null;S.aiStatus='Last line played with '+nm};
 u.onerror=e=>{if(aiUtter===u)aiUtter=null;S.aiStatus='Browser error: '+(e&&e.error?e.error:'unknown');console.warn('ship voice',e&&e.error)};
 aiUtter=u;
 speechSynthesis.speak(u);
+aiWatch2=setTimeout(()=>{
+if(started)return;
+if(!S.aiDef&&!retry){
+S.aiDef=true;
+try{localStorage.setItem('zg-vname2','__default')}catch(e){}
+try{speechSynthesis.cancel()}catch(e){}
+S.aiStatus='Voice '+nm+' did not play. Switched to the browser default voice';
+aiSpeak(text,force,true);
+}else S.aiStatus='The browser did not play any audio. Check the tab is not muted and system sound is on';
+},1600);
 }catch(e){S.aiStatus='Error: '+e}
 };
 if(busy)aiTimer=setTimeout(go,120);else go();
 }catch(e){S.aiStatus='Error: '+e}
+}
+function aiCycle(){
+aiInit();
+if(!window.speechSynthesis)return;
+const names=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)).map(v=>v.name);
+const list=['__default'].concat(names);
+const cur=S.aiDef?'__default':(S.aiVN||'');
+const nx=list[(list.indexOf(cur)+1)%list.length];
+if(nx==='__default'){S.aiDef=true}else{S.aiDef=false;S.aiVN=nx}
+try{localStorage.setItem('zg-vname2',nx)}catch(e){}
 }
 function shipSay(k,arg){
 const d=SHIP[k];if(!d)return;
