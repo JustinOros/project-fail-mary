@@ -2283,7 +2283,7 @@ else toast((q?q.name:'Someone')+' burned an Astrophage for fuel','#ffe45c');
 shipSay('burn');
 break}
 if(m.mk){
-if(m.id===S.myId){sfx.ding();toast(m.mk==='flash'?'Printed a Flashlight. It is on while selected in your inventory':'Printed Gravity Boots. They work while you carry them. Drop them to take them off','#7affc8');S.autoSel=m.mk==='flash'?m.mk:S.autoSel;S.autoSelT=S.time+5}
+if(m.id===S.myId){sfx.ding();toast(m.mk==='flash'?'Printed a Flashlight. It switches on by itself when Astrophage is nearby':'Printed Gravity Boots. They work while you carry them. Drop them to take them off','#7affc8');S.autoSel=m.mk==='flash'?m.mk:S.autoSel;S.autoSelT=S.time+5}
 break}
 if(m.id===S.myId){sfx.ding();S.tut.f.printed=true;toast(m.k<0?'Printed a wrench':'Printed a '+KEYNAME[m.k]+' keycard','#7affc8')}
 break}
@@ -3588,6 +3588,13 @@ if(S.autoSel&&S.me){
 const ai=S.items.find(i=>i.owner===S.myId&&i.type===S.autoSel);
 if(ai&&ai.slot>=0){S.me.sel=ai.slot;S.autoSel=null}
 else if(S.time>(S.autoSelT||0))S.autoSel=null;
+}
+if(S.me&&!S.me.dead&&!S.me.out&&!S.me.spec){
+const fl=S.items.find(i=>i.owner===S.myId&&i.type==='flash'&&i.slot>=0);
+let near=false;
+if(fl)for(const i of S.items){if(i.type==='astro'&&!i.owner&&Math.hypot(i.x-S.me.x,i.y-S.me.y)<420){near=true;break}}
+if(near&&!S.flSeen&&fl&&S.me.sel!==fl.slot)S.me.sel=fl.slot;
+S.flSeen=near;
 }
 if(S.rpwT&&S.phase==='play'&&S.L.fin){
 const e=Math.min(1,(performance.now()-S.rpwT)/3000),f=S.L.fin;
