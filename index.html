@@ -1752,6 +1752,7 @@ sd:S.stDone.map((v,i)=>v?i:-1).filter(i=>i>=0),
 pk:[...S.taken],fk:[...S.fTaken],br:S.br,
 dr:S.L.walls.filter(w=>w.door!==undefined&&w.door!==null&&w.open).map(w=>w.door)});
 }else{
+np.spec=true;
 sendLobby();
 conn.send({t:'wait'});
 }
@@ -1932,6 +1933,7 @@ try{if(S.hostConn)S.hostConn.close()}catch(e){}
 try{if(S.peer)S.peer.destroy()}catch(e){}
 S.peer=null;S.hostConn=null;S.conns.clear();S.players.clear();S.me=null;S.L=null;S.isHost=false;S.solo=false;S.phase='lobby';
 show('menu');$('err').textContent=msg||'';
+if(inviteMode&&msg)$('joinBack').style.display='';
 }
 
 function startRound(lvl){
@@ -1989,7 +1991,7 @@ const wl=all.filter(q=>q.id!=='H'&&!q.ready).map(q=>q.name);
 if(S.isHost&&S.startWarn&&wl.length){const w=$('startWarn');w.style.display='block';w.textContent='Waiting on '+wl.join(', ')+'. Press START again to begin anyway.'}
 else $('startWarn').style.display='none';
 $('waiting').style.display=S.isHost?'none':'';
-if(S.midWait){$('waiting').textContent='Round in progress. You will join automatically when the next round starts.';$('readyBtn').style.display='none'}else $('waiting').textContent='Waiting for the host to start...';
+if(S.midWait){$('waiting').textContent='Waiting for the next round. You will join automatically when it starts.';$('readyBtn').style.display='none'}else $('waiting').textContent='Waiting for the host to start...';
 }
 
 function allReady(){for(const q of S.players.values())if(q.id!=='H'&&!q.spec&&!q.ready)return false;return true}
@@ -2997,7 +2999,16 @@ takeName();$('err').textContent='';
 $('topRow').style.display='none';$('joinBox').style.display='flex';
 $('code').focus();
 };
+function exitInvite(){
+inviteMode=false;
+$('invite').style.display='none';
+$('joinPrompt').style.display='';
+$('code').style.display='';$('code').value='';
+$('joinBack').style.display='';
+try{history.replaceState(null,'',location.pathname)}catch(e){}
+}
 $('joinBack').onclick=()=>{
+if(inviteMode)exitInvite();
 $('err').textContent='';
 $('joinBox').style.display='none';$('topRow').style.display='';
 };
