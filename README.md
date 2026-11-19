@@ -140,7 +140,7 @@ The whole game is `index.html`. Put it in any static host, such as GitHub Pages,
 
 ## Sound
 
-A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass line speeds up and gets louder as the self destruct timer runs down. Mute with your mute key.
+A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass line speeds up and gets louder as the self destruct timer runs down. Mute with your mute key or the speaker button at the top of the screen. Your choice is remembered.
 
 ## Install as an app
 
