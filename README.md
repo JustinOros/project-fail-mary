@@ -6,6 +6,8 @@ Play it: https://justinoros.github.io/project-fail-mary/
 
 No install, no server, no account. It is a single `index.html` file.
 
+The start screen shows how many games have been played. Each time a lobby starts a new game from level 1, the host's browser adds one to a public counter on the free Abacus service (abacus.jasoncameron.dev). No names or lobby codes are sent. If the service is unreachable the line is simply hidden.
+
 ## Playing with friends
 
 1. One player opens the page, sets a name and color, and clicks **Play**. That opens a lobby with just them in it.

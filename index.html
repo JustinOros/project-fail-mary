@@ -116,6 +116,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div class="card">
 <h1>PROJECT FAIL MARY</h1>
 <div class="sub">Fix the ship before it blows. It will take a Hail Mary.</div>
+<div class="sub" id="gc" style="display:none;opacity:.75"></div>
 <div class="sub" id="invite" style="display:none"></div>
 <input id="name" maxlength="12" placeholder="Your name" autocomplete="off">
 <div id="swatches"></div>
@@ -1937,12 +1938,28 @@ if(inviteMode&&msg)$('joinBack').style.display='';
 }
 
 function startRound(lvl){
-if(lvl===1){S.players.forEach(p=>p.score=0);if(S.ghosts)S.ghosts.clear()}
+if(lvl===1){S.players.forEach(p=>p.score=0);if(S.ghosts)S.ghosts.clear();countGame()}
 const seed=(Math.random()*4e9)>>>0;
 S.mode='game';
 emit({t:'start',lvl,seed});
 }
 
+const GC_URL='https://abacus.jasoncameron.dev/';
+const GC_KEY='justinoros-project-fail-mary/games';
+function gcShow(v){
+const n=Number(v);
+if(!isFinite(n)||n<0)return;
+$('gc').textContent=n.toLocaleString('en-US')+(n===1?' game played':' games played');
+$('gc').style.display='';
+}
+function gcCall(kind){
+if(typeof fetch!=='function')return Promise.resolve();
+const ctl=typeof AbortController==='function'?new AbortController():null;
+const to=ctl?setTimeout(()=>ctl.abort(),6000):0;
+return fetch(GC_URL+kind+'/'+GC_KEY,ctl?{signal:ctl.signal}:{}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(to);if(j&&j.value!==undefined)gcShow(j.value)}).catch(()=>{});
+}
+function countGame(){gcCall('hit')}
+gcCall('get');
 function show(id){
 $('play').disabled=false;
 if(id==='menu'){
