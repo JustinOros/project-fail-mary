@@ -1198,10 +1198,20 @@ let tp=me.tow?S.players.get(me.tow):null;
 if(!tp)S.players.forEach(q=>{if(q.tow===S.myId&&!q.spec&&!q.out)tp=q});
 if(tp&&!tp.spec&&!tp.out){
 const tdx=tp.x-me.x,tdy=tp.y-me.y,td=Math.hypot(tdx,tdy);
-if(td>TL&&td>0.001){
-const nx=tdx/td,ny=tdy/td,f=tp.a?1:0.5,rv=((tp.vx||0)-me.vx)*nx+((tp.vy||0)-me.vy)*ny;
+if(td>0.001){
+const nx=tdx/td,ny=tdy/td,f=tp.a?1:0.5;
+const rest=R*2+4;
+if(td>rest){
+const st=Math.min(td-rest,150),k=Math.min(1,dt*5);
+const pull=Math.min(560,st*7)*(tp.a?1.6:1);
+me.vx+=nx*pull*dt;me.vy+=ny*pull*dt;
+me.vx+=((tp.vx||0)-me.vx)*k*0.5;me.vy+=((tp.vy||0)-me.vy)*k*0.5;
+}
+if(td>TL){
+const rv=((tp.vx||0)-me.vx)*nx+((tp.vy||0)-me.vy)*ny;
 if(rv>0){me.vx+=nx*rv*f;me.vy+=ny*rv*f}
 const ex=td-TL;me.x+=nx*ex*f*0.5;me.y+=ny*ex*f*0.5;
+}
 }
 }
 sp=Math.hypot(me.vx,me.vy);

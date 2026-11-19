@@ -47,7 +47,7 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 You float in zero gravity, so momentum is everything.
 
-- Hold **grab** next to a wall to stick to it. Hold grab next to a friend and a short tether connects you. While you keep holding grab the tether keeps you close, and either of you can pull the other around with thrusters or by pushing off walls. Let go of grab and the tether snaps.
+- Hold **grab** next to a wall to stick to it. Hold grab next to a friend and a short tether connects you. While you keep holding grab the tether gently reels the two of you in until you are almost touching, which makes reviving a downed friend easy. It also drags the other player along when you thrust or push off a wall, and a player holding a wall acts as an anchor that pulls the other toward them. The tether keeps you close, and either of you can pull the other around with thrusters or by pushing off walls. Let go of grab and the tether snaps.
 - Release grab to push off toward where you are aiming. Holding grab longer before releasing gives a harder push.
 - Thrusters give you extra control, but fuel is limited and does not refill on its own.
 - Repairs start by themselves while you are inside the dashed ring around a panel. No button is needed. If you leave the ring for more than 1 second, or get stunned, the progress resets back to zero.
