@@ -123,7 +123,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div class="row"><button id="rejoin" style="display:none">REJOIN</button></div>
 <div id="joinBox"><div class="sub" id="joinPrompt">Enter the lobby code</div><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><div class="row"><button id="joinBack" class="ghost">BACK</button><button id="join" class="go">JOIN</button></div></div>
 <div id="err"></div>
-<div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Stay inside a broken panel's circle with a wrench to repair it. The engineer prints wrenches and keycards from filament with E or Y. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, X drop, Y print by hand, LT share fuel. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
+<div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Stay inside a broken panel's circle with a wrench to repair it. The engineer prints wrenches and keycards from filament with E or Y. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, X drop, Y print by hand, LT share fuel. Grab a friend then thrust to tow them. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
 </div>
 </div>
 
@@ -790,7 +790,7 @@ S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false
 let i=0;
 S.players.forEach(p=>{
 const sp=S.L.spawn[i%S.L.spawn.length];i++;
-p.x=p.tx=sp.x;p.y=p.ty=sp.y;p.vx=p.vy=0;p.att=null;p.a=0;p.rep=-1;p.spec=false;p.out=false;p.outUntil=0;p.holdId=-1;p.stun=0;p.fuel=1;p.charge=0;p.rd=0;p.sel=0;p.nograb=0;p.th=0;p.ang=0;
+p.x=p.tx=sp.x;p.y=p.ty=sp.y;p.vx=p.vy=0;p.att=null;p.a=0;p.rep=-1;p.spec=false;p.out=false;p.outUntil=0;p.holdId=-1;p.tow=null;p.stun=0;p.fuel=1;p.charge=0;p.rd=0;p.sel=0;p.nograb=0;p.th=0;p.ang=0;
 });
 S.me=S.players.get(S.myId);S.specIdx=0;
 if(S.isHost)hostSpawnItems();
@@ -842,22 +842,41 @@ return false;
 }
 
 function updateMe(dt){
-const me=S.me,L=S.L,inp=readInput(),t=S.time,wt=myWeight();
+const me=S.me,L=S.L,inp=readInput(),t=S.time,wt=myWeight()+(me.tow?1:0);
 me.ang=Math.atan2(inp.ay,inp.ax);
 const live=t>=0&&S.phase!=='board'&&S.phase!=='boom';
 me.stun=Math.max(0,me.stun-dt);
 me.nograb=Math.max(0,me.nograb-dt);
 me.th=0;
 me.rep=-1;me.rr=me.att&&!me.att.pid?1:0.5;
-if(!live||me.out){me.vx=me.vy=0;me.att=null;me.a=me.att?(me.att.pid?2:1):0;return}
+if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=me.att?(me.att.pid?2:1):0;return}
 const can=me.stun<=0;
 const grab=can&&inp.grab;
+let tb=null;
+S.players.forEach(q=>{if(q.tow===S.myId&&!q.spec&&!q.out&&q.stun<=0)tb=q});
+if(can&&tb&&me.nograb<=0&&!(me.att&&!me.att.towed)){
+if(me.att&&me.att.towed&&inp.grab){me.att=null;me.nograb=0.6;me.towBreak=S.time+1}
+else if(!me.towBreak||S.time>me.towBreak){
+const dx=me.x-tb.x,dy=me.y-tb.y,d=Math.hypot(dx,dy)||1;
+me.att={nx:dx/d,ny:dy/d,pid:tb.id,towed:true};
+}
+}else if(me.att&&me.att.towed)me.att=null;
+if(me.att&&me.att.pid&&!me.att.towed&&grab&&inp.thr&&me.fuel>0.02){
+const co=S.players.get(me.att.pid);
+if(co){me.tow=me.att.pid;me.vx=co.vx||0;me.vy=co.vy||0}
+me.att=null;me.charge=0;
+}
+if(me.tow){
+const co=S.players.get(me.tow);
+if(!co||co.spec||co.out||!grab)me.tow=null;
+}
 if(me.att&&me.att.pid){
 const co=S.players.get(me.att.pid);
 if(!co||co.stun>0||!can||co.a===2){me.att=null;me.charge=0;me.nograb=0.2}
 else{me.x=co.x+me.att.nx*R*2;me.y=co.y+me.att.ny*R*2;collide(me,false)}
 }
-if(me.att){
+if(me.att&&me.att.towed){const co=S.players.get(me.att.pid);me.vx=co?co.vx||0:0;me.vy=co?co.vy||0:0}
+else if(me.att){
 if(me.att.pid){const co=S.players.get(me.att.pid);me.vx=co?co.vx||0:0;me.vy=co?co.vy||0:0}
 else{me.vx=me.vy=0}
 if(!can){me.att=null;me.charge=0}
@@ -928,7 +947,7 @@ break;
 S.players.forEach(o=>{
 if(o===me||o.spec||o.out)return;
 const dx=me.x-o.x,dy=me.y-o.y,d=Math.hypot(dx,dy);
-if(grab&&me.nograb<=0&&!me.att&&o.a!==2&&d<R*2+6&&d>0.001){
+if(grab&&me.nograb<=0&&!me.att&&!me.tow&&o.a!==2&&d<R*2+6&&d>0.001){
 me.att={nx:dx/d,ny:dy/d,pid:o.id};me.vx=o.vx||0;me.vy=o.vy||0;me.charge=0;
 sfx.grab();burst((me.x+o.x)/2,(me.y+o.y)/2,'#bcd2ff',6,80,0.35);
 return;
@@ -1469,7 +1488,7 @@ onMsg(m);
 }
 function bcastState(){
 const ps=[];
-S.players.forEach(p=>ps.push([p.id,p.x,p.y,p.vx,p.vy,p.a,p.rep,p.rr,p.stun,p.ang,p.wa,p.th,p.score,p.rd,p.fuel,p.sel,p.spec?1:0,p.out?1:0]));
+S.players.forEach(p=>ps.push([p.id,p.x,p.y,p.vx,p.vy,p.a,p.rep,p.rr,p.stun,p.ang,p.wa,p.th,p.score,p.rd,p.fuel,p.sel,p.spec?1:0,p.out?1:0,p.tow||0]));
 const m={t:'ps',tm:S.time,bp:S.br?S.br.prog:0,ps,sp:S.stProg,fp:S.finProg,dm:S.dmg,fg:S.fProg,it:S.items.map(i=>[i.uid,i.type,i.meta,i.owner||0,i.slot,i.x,i.y,i.vx,i.vy,i.got||0])};
 for(const c of S.conns.values())if(c.open)c.send(m);
 }
@@ -1537,7 +1556,7 @@ const p=S.players.get(e[0]);if(!p)return;
 p.score=e[12];p.rd=e[13];p.spec=!!e[16];
 if(p===S.me){if(e[17])p.out=true;return}
 p.out=!!e[17];
-p.tx=e[1];p.ty=e[2];p.vx=e[3];p.vy=e[4];p.a=e[5];p.rep=e[6];p.rr=e[7];p.stun=e[8];p.ang=e[9];p.wa=e[10];p.th=e[11];p.fuel=e[14];p.sel=e[15];
+p.tx=e[1];p.ty=e[2];p.vx=e[3];p.vy=e[4];p.a=e[5];p.rep=e[6];p.rr=e[7];p.stun=e[8];p.ang=e[9];p.wa=e[10];p.th=e[11];p.fuel=e[14];p.sel=e[15];p.tow=e[18]||null;
 if(!p.seen){p.x=p.tx;p.y=p.ty;p.seen=true}
 });
 if(S.br)S.br.prog=m.bp||0;
@@ -1759,7 +1778,7 @@ const taken=[...S.players.values()].some(q=>q!==p&&q.color===m.color);
 if(!taken&&m.color>=0&&m.color<8){p.color=m.color;sendLobby()}
 }else if(m.t==='st'){
 const p=S.players.get(id);if(!p)return;
-p.tx=m.x;p.ty=m.y;p.vx=m.vx;p.vy=m.vy;p.a=m.a;p.rep=m.rep;p.rr=m.rr;p.stun=m.stun;p.ang=m.ang;p.wa=m.wa;p.th=m.th;p.fuel=m.fu;p.sel=m.sl;
+p.tx=m.x;p.ty=m.y;p.vx=m.vx;p.vy=m.vy;p.a=m.a;p.rep=m.rep;p.rr=m.rr;p.stun=m.stun;p.ang=m.ang;p.wa=m.wa;p.th=m.th;p.fuel=m.fu;p.sel=m.sl;p.tow=m.tow||null;
 if(!p.seen){p.x=p.tx;p.y=p.ty;p.seen=true}
 }else if(m.t==='pick'){
 handlePick(id,m.i);
@@ -2414,6 +2433,7 @@ ctx.beginPath();ctx.arc(p.x,p.y,p.r*(0.4+0.6*p.life/p.max),0,6.3);ctx.fill();
 ctx.globalAlpha=1;
 const gone=S.phase==='boom'&&S.winT>0.15;
 drawBreach();
+S.players.forEach(p=>{const q=p.tow&&S.players.get(p.tow);if(q&&!p.spec&&!p.out&&!q.out){ctx.strokeStyle='rgba(255,217,61,.85)';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke()}});
 if(!gone)S.players.forEach(p=>{if(p!==S.me&&!p.spec&&!p.out)drawPlayer(p,false)});
 const me=S.me;
 if(!me.spec&&!me.out&&me.att&&S.phase!=='won'){
@@ -2674,7 +2694,7 @@ S.sendT+=dt;if(S.sendT>=0.05){S.sendT=0;bcastState()}
 S.sendT+=dt;
 if(S.sendT>=0.05&&S.hostConn&&S.hostConn.open&&!me.spec){
 S.sendT=0;
-S.hostConn.send({t:'st',x:me.x,y:me.y,vx:me.vx,vy:me.vy,a:me.a,rep:me.rep,rr:me.rr,stun:me.stun,ang:me.ang,wa:me.wa,th:me.th,fu:me.fuel,sl:me.sel});
+S.hostConn.send({t:'st',x:me.x,y:me.y,vx:me.vx,vy:me.vy,a:me.a,rep:me.rep,rr:me.rr,stun:me.stun,ang:me.ang,wa:me.wa,th:me.th,fu:me.fuel,sl:me.sel,tow:me.tow||0});
 }
 }
 if(!S.isHost)S.items.forEach(it=>{if(!it.owner){it.x+=it.vx*dt;it.y+=it.vy*dt}});

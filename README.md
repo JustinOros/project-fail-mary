@@ -46,6 +46,7 @@ You float in zero gravity, so momentum is everything.
 - Fuel boxes refill half a tank. Just fly into one. A box is ignored while your tank is almost full, so it stays for someone who needs it.
 - You can share your own fuel with a nearby friend by holding **share fuel** next to them.
 - Crawlers bump into each other, so you can knock a friend off a panel.
+- You can grab another crawler the same way you grab a wall. While holding a friend, press thrust to tow them: your thrusters and your fuel move you both, and their weight slows you a little. Keep holding grab to keep towing, and let go to drop them. If you are being towed, press grab to break free.
 
 ## Inventory and tools
 
