@@ -2149,6 +2149,22 @@ m.res.forEach(r=>{const p=S.players.get(r.id);if(p){p.score=r.sc;p.rd=r.rd}});
 const wp=S.players.get(m.id);
 if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('POWER HAS BEEN RESTORED!!','#ffd93d')}
 sfx.win();S.flash=0.6;shipSay('win');
+{
+const rd=S.L&&S.L.rd,me=S.me;
+if(rd){
+burst(rd.x,rd.y0+rd.sgn*40,'#ffe45c',70,560,1.1);burst(rd.x,rd.y0+rd.sgn*40,'#c58bff',40,420,1);
+if(me&&!me.spec&&!me.out&&!me.dead){
+const dx=me.x-rd.x,dy=me.y-rd.y0;
+if(Math.hypot(dx,dy)<rd.half+10&&dy*rd.sgn>-30){
+me.att=null;me.tow=null;me.charge=0;me.stun=0;
+me.vx=Math.max(-260,Math.min(260,dx*1.1))+(Math.random()-0.5)*160;
+me.vy=rd.sgn*(520+Math.random()*120);
+S.shake=Math.max(S.shake,16);sfx.whoosh();sfx.launch(1);
+burst(me.x,me.y,'#ffe45c',30,420,0.8);
+}
+}
+}
+}
 break}
 case 'boom':{
 S.players.forEach(q=>q.ready=false);
