@@ -24,6 +24,7 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 ## How a round works
 
 - Patch every damaged area in the ship's walls. Each one shows a number: how many wrenches it uses up. Wrenches are made on the 3D printer (see below). Everyone standing in the circle counts together, and more players patch faster.
+- Damaged areas show glowing cracks spreading across the wall. The cracks grow longer and hotter as the damage gets worse, shrink while you repair, and fade away when the area is fixed.
 - From Level 3 on, damaged areas get worse over time (up to 3 wrenches). A spot at 3 that is ignored for 30 seconds bursts into a hull breach, then needs patching again.
 - Once every damaged area is patched, the reactor unlocks. Every active player must be inside the ring at the same time, each holding a wrench, for about 4 seconds. If someone leaves, the progress slowly drains. Each player's wrench is used up at the end. The player with the most points that round gets the round bonus.
 - A self destruct timer is running. If time runs out, the ship explodes and everyone loses.
