@@ -1111,7 +1111,9 @@ me.th=0;
 me.rep=-1;me.rr=me.att?1:0.5;
 if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=0;return}
 const can=me.stun<=0&&!me.dead;
-const grab=can&&inp.grab;
+if(S.pm)S.pmBlock=true;else if(!inp.grab)S.pmBlock=false;
+const gb=!!S.pmBlock;
+const grab=can&&inp.grab&&!gb;
 const autoOn=tc.on&&S.autoGrab&&can;
 me.agoff=Math.max(0,(me.agoff||0)-dt);
 me.bootCool=Math.max(0,(me.bootCool||0)-dt);
@@ -1130,13 +1132,14 @@ bq=null;
 if(me.tow){
 const co=S.players.get(me.tow);
 if(!co||co.spec||co.out||Math.hypot(co.x-me.x,co.y-me.y)>340){me.tow=null;me.nograb=0.4}
-else if(!grab){me.tow=null;me.nograb=0.15;sfx.snap()}
+else if(!grab&&!gb){me.tow=null;me.nograb=0.15;sfx.snap()}
 }
 if(me.att){
 me.vx=me.vy=0;
 if(!can){me.att=null;me.charge=0}
-else if(grab){me.charge=Math.min(1,me.charge+dt/0.9);if(me.att.boot)me.att.ch=true;me.att.held=true}
-else if(autoOn&&!me.att.boot&&!me.att.held){me.charge=0}
+else if(gb){if(!(me.att.boot&&!me.att.ch))me.att.keep=true;me.charge=0}
+else if(grab){me.charge=Math.min(1,me.charge+dt/0.9);if(me.att.boot)me.att.ch=true;me.att.held=true;me.att.keep=false}
+else if(me.att.keep||(autoOn&&!me.att.boot&&!me.att.held)){me.charge=0}
 else if(me.att.boot&&!me.att.ch){
 const a=me.att;
 {
@@ -3609,7 +3612,7 @@ txt('SUCKED INTO SPACE',vw/2,vh/2-14,30,'#ff6b6b','center','900');
 txt('Respawning at the nearest airlock...',vw/2,vh/2+22,16,'#cfd8ff','center','700');
 }
 if(me.spec){const tg=specTarget();txt('WATCHING'+(tg?': '+tg.name:''),vw/2,110,18,'#cfd8ff','center','800')}
-else{drawArrows(L,sc);drawHotbar();drawTut(L,sc);drawPrintMenu()}
+else{drawArrows(L,sc);drawHotbar();drawTut(L,sc)}
 if(t<0){
 const c=Math.ceil(-t);
 txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
@@ -3716,6 +3719,7 @@ ctx.restore();
 if(L.dark>0)drawDark(L,sc);
 drawHud(L,sc);
 if(tc.on&&S.phase!=='board'&&!S.chatOpen&&!S.me.spec)drawTouch();
+if(!S.me.spec)drawPrintMenu();
 }
 
 function tick(dt){
