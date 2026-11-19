@@ -47,14 +47,14 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 You float in zero gravity, so momentum is everything.
 
-- Hold **grab** next to a wall to stick to it. Fly into a friend while holding grab and you cling to them and ride along as they move. Release to push off them. You cannot grab someone who is already riding another player.
+- Hold **grab** next to a wall to stick to it. Hold grab next to a friend and a short tether connects you. While you keep holding grab the tether keeps you close, and either of you can pull the other around with thrusters or by pushing off walls. Let go of grab and the tether snaps.
 - Release grab to push off toward where you are aiming. Holding grab longer before releasing gives a harder push.
 - Thrusters give you extra control, but fuel is limited and does not refill on its own.
 - Repairs start by themselves while you are inside the dashed ring around a panel. No button is needed. If you leave the ring for more than 1 second, or get stunned, the progress resets back to zero.
 - Fuel boxes refill half a tank. Just fly into one. A box is ignored while your tank is almost full, so it stays for someone who needs it.
 - You can share your own fuel with a nearby friend by holding **share fuel** next to them.
 - Crawlers bump into each other, so you can knock a friend off a panel.
-- You can grab another crawler the same way you grab a wall. While holding a friend, press thrust to tow them: your thrusters and your fuel move you both, and their weight slows you a little. Keep holding grab to keep towing, and let go to drop them. If you are being towed, press grab to break free.
+- If a breach sucks you out, you respawn at an airlock as a downed crawler with X eyes and cannot move or act. Any teammate can revive you by staying inside your dashed circle for about 3 seconds, and more helpers revive you faster. Grabbing a downed friend tethers them to you so you can drag them and stay in range. If nobody is left standing, the ship reboots you automatically after about 6 seconds.
 
 ## Inventory and tools
 

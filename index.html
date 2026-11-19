@@ -196,7 +196,7 @@ const ICE=[
 {urls:['turn:freestun.net:3478','turns:freestun.net:5349'],username:'free',credential:'free'}
 ];
 const PEEROPT={config:{iceServers:ICE,iceCandidatePoolSize:4},debug:1};
-const MINV=34,MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9;
+const MINV=34,MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9,TL=R*2+46,REVR=R+46;
 const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160},astro:{name:'Astrophage',icon:'✨',weight:0,kick:70}};
 const SWR=20;
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
@@ -533,6 +533,7 @@ star:()=>{tone(880,0.1,'sine',0.09);tone(1320,0.15,'sine',0.09,1,0.07)},
 win:()=>{[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,0.25,'triangle',0.1,1,i*0.11));[131,196,262].forEach(f=>tone(f,1.4,'triangle',0.07,1,0.7,'m'))},
 beep:hi=>tone(hi?880:440,0.18,'square',0.07),
 warn:()=>{tone(300,0.25,'sawtooth',0.07);tone(300,0.25,'sawtooth',0.07,1,0.3)},
+snap:()=>{tone(720,0.07,'square',0.04,0.4);nz(0.05,0.03,'highpass',3000,3000)},
 puff:()=>{tone(120,0.08,'sawtooth',0.02,0.5);nz(0.1,0.03,'highpass',2200,1600)},
 whoosh:()=>nz(0.9,0.14,'lowpass',2600,160,0,0.8),
 shimmer:()=>{[1568,1976,2349,2637].forEach((f,i)=>tone(f,0.22,'sine',0.045,1.01,i*0.05))},
@@ -770,7 +771,7 @@ function brEnd(why,by){
 S.brNext=S.time+35+Math.random()*35;
 if(why==='timeout')S.time+=BR_PEN;
 if(why==='patched'&&S.br)hostBonus(5,S.br.x,S.br.y);
-if(why==='patched'){const ids=[...S.players.values()].filter(p=>p.rep===-3&&!p.spec&&!p.out).map(p=>p.id);payWrenches(ids,2)}
+if(why==='patched'){const ids=[...S.players.values()].filter(p=>p.rep===-3&&!p.spec&&!p.out&&!p.dead).map(p=>p.id);payWrenches(ids,2)}
 emit({t:'bre',why,by});
 }
 function handleEject(id){
@@ -778,21 +779,21 @@ const p=S.players.get(id);
 if(!p)return;
 const conn=S.conns.get(id);
 const L=S.L;
-if(!S.br||!L||p.out||p.spec||Math.hypot(p.x-S.br.x,p.y-S.br.y)>170){
+if(!S.br||!L||p.out||p.spec||p.dead||Math.hypot(p.x-S.br.x,p.y-S.br.y)>170){
 if(id!=='H'&&conn&&conn.open)conn.send({t:'spawn',x:p.x,y:p.y,keep:1});
 return;
 }
 const sp=L.spawn[Math.floor(Math.random()*L.spawn.length)];
 p.lost=[];
 S.items.forEach(it=>{if(it.owner===id&&it.type!=='printer'){it.owner=null;it.slot=-1;it.x=sp.x;it.y=sp.y;it.vx=it.vy=0;p.lost.push(it.uid)}});
-p.out=true;p.outUntil=performance.now()+3000;p.rx=sp.x;p.ry=sp.y;p.att=null;p.rep=-1;
+p.out=true;p.tow=null;p.outUntil=performance.now()+3000;p.rx=sp.x;p.ry=sp.y;p.att=null;p.rep=-1;
 emit({t:'ejd',id});
 }
-function hostRespawns(){
+function hostRespawns(dt){
 const now=performance.now();
 S.players.forEach(p=>{
 if(!p.out||!p.outUntil||now<p.outUntil)return;
-p.out=false;p.outUntil=0;
+p.out=false;p.outUntil=0;p.dead=true;p.rv=0;
 p.x=p.tx=p.rx;p.y=p.ty=p.ry;p.vx=p.vy=0;p.fuel=0.4;p.att=null;p.stun=0;
 if(p.lost&&p.lost.length){
 const ls=S.items.filter(it=>!it.owner&&p.lost.includes(it.uid)&&Math.hypot(it.x-p.rx,it.y-p.ry)<60);
@@ -804,8 +805,18 @@ it.vx=Math.cos(a)*sp;it.vy=Math.sin(a)*sp;
 });
 p.lost=null;
 }
-if(p.id==='H'){S.cam.x=p.x;S.cam.y=p.y;toast('Back aboard','#7affc8')}
-else{const c=S.conns.get(p.id);if(c&&c.open)c.send({t:'spawn',x:p.rx,y:p.ry,fu:0.4})}
+if(p.id==='H'){S.cam.x=p.x;S.cam.y=p.y;toast('You are down. A teammate must revive you','#ff6b6b')}
+else{const c=S.conns.get(p.id);if(c&&c.open)c.send({t:'spawn',x:p.rx,y:p.ry,fu:0.4,dead:1})}
+});
+const alive=[...S.players.values()].filter(q=>!q.spec&&!q.out&&!q.dead);
+S.players.forEach(p=>{
+if(!p.dead)return;
+let n=0;
+alive.forEach(q=>{if(Math.hypot(q.x-p.x,q.y-p.y)<REVR)n++});
+if(n>0)p.rv=Math.min(1,(p.rv||0)+dt/3*(1+0.5*(n-1)));
+else if(!alive.length)p.rv=Math.min(1,(p.rv||0)+dt/6);
+else p.rv=Math.max(0,(p.rv||0)-dt*0.4);
+if(p.rv>=1){p.dead=false;p.rv=0;p.fuel=Math.max(p.fuel||0,0.4);p.stun=0;emit({t:'rev',id:p.id,auto:alive.length?0:1})}
 });
 }
 function coopNeed(k,n){return 1}
@@ -845,7 +856,7 @@ return null;
 }
 if(allDone()){
 const L=S.L,rd=L.rd,N=S.finProg.N||0,M=S.finProg.M||0;
-const ra=[];S.players.forEach(q=>{if(!q.spec&&!q.out)ra.push(q)});
+const ra=[];S.players.forEach(q=>{if(!q.spec&&!q.out&&!q.dead)ra.push(q)});
 const held=ra.filter(q=>q.rep===-4).length;
 const ac=mine.filter(it=>it.type==='astro').length;
 if(!rd.doorW.open){
@@ -1012,7 +1023,7 @@ S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false
 let i=0;
 S.players.forEach(p=>{
 const sp=S.L.spawn[i%S.L.spawn.length];i++;
-p.x=p.tx=sp.x;p.y=p.ty=sp.y;p.vx=p.vy=0;p.att=null;p.a=0;p.rep=-1;p.spec=false;p.out=false;p.outUntil=0;p.holdId=-1;p.tow=null;p.stun=0;p.fuel=1;p.charge=0;p.rd=0;p.sel=0;p.nograb=0;p.th=0;p.ang=0;
+p.x=p.tx=sp.x;p.y=p.ty=sp.y;p.vx=p.vy=0;p.att=null;p.a=0;p.rep=-1;p.spec=false;p.out=false;p.outUntil=0;p.holdId=-1;p.tow=null;p.dead=false;p.rv=0;p.stun=0;p.fuel=1;p.charge=0;p.rd=0;p.sel=0;p.nograb=0;p.th=0;p.ang=0;
 });
 S.me=S.players.get(S.myId);S.specIdx=0;
 if(S.isHost)hostSpawnItems();
@@ -1064,43 +1075,23 @@ return false;
 }
 
 function updateMe(dt){
-const me=S.me,L=S.L,inp=readInput(),t=S.time,wt=myWeight()+(me.tow?1:0);
+const me=S.me,L=S.L,inp=readInput(),t=S.time,wt=myWeight();
 me.ang=Math.atan2(inp.ay,inp.ax);
 const live=t>=0&&S.phase!=='board'&&S.phase!=='boom';
 me.stun=Math.max(0,me.stun-dt);
 me.nograb=Math.max(0,me.nograb-dt);
 me.th=0;
-me.rep=-1;me.rr=me.att&&!me.att.pid?1:0.5;
-if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=me.att?(me.att.pid?2:1):0;return}
-const can=me.stun<=0;
+me.rep=-1;me.rr=me.att?1:0.5;
+if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=0;return}
+const can=me.stun<=0&&!me.dead;
 const grab=can&&inp.grab;
-let tb=null;
-S.players.forEach(q=>{if(q.tow===S.myId&&!q.spec&&!q.out&&q.stun<=0)tb=q});
-if(can&&tb&&me.nograb<=0&&!(me.att&&!me.att.towed)){
-if(me.att&&me.att.towed&&inp.grab){me.att=null;me.nograb=0.6;me.towBreak=S.time+1}
-else if(!me.towBreak||S.time>me.towBreak){
-const dx=me.x-tb.x,dy=me.y-tb.y,d=Math.hypot(dx,dy)||1;
-me.att={nx:dx/d,ny:dy/d,pid:tb.id,towed:true};
-}
-}else if(me.att&&me.att.towed)me.att=null;
-if(me.att&&me.att.pid&&!me.att.towed&&grab&&inp.thr&&me.fuel>0.02){
-const co=S.players.get(me.att.pid);
-if(co){me.tow=me.att.pid;me.vx=co.vx||0;me.vy=co.vy||0}
-me.att=null;me.charge=0;
-}
 if(me.tow){
 const co=S.players.get(me.tow);
-if(!co||co.spec||co.out||!grab)me.tow=null;
+if(!co||co.spec||co.out||Math.hypot(co.x-me.x,co.y-me.y)>340){me.tow=null;me.nograb=0.4}
+else if(!grab){me.tow=null;me.nograb=0.15;sfx.snap()}
 }
-if(me.att&&me.att.pid){
-const co=S.players.get(me.att.pid);
-if(!co||co.stun>0||!can||co.a===2){me.att=null;me.charge=0;me.nograb=0.2}
-else{me.x=co.x+me.att.nx*R*2;me.y=co.y+me.att.ny*R*2;collide(me,false)}
-}
-if(me.att&&me.att.towed){const co=S.players.get(me.att.pid);me.vx=co?co.vx||0:0;me.vy=co?co.vy||0:0}
-else if(me.att){
-if(me.att.pid){const co=S.players.get(me.att.pid);me.vx=co?co.vx||0:0;me.vy=co?co.vy||0:0}
-else{me.vx=me.vy=0}
+if(me.att){
+me.vx=me.vy=0;
 if(!can){me.att=null;me.charge=0}
 else if(grab){me.charge=Math.min(1,me.charge+dt/0.9)}
 else{
@@ -1109,7 +1100,7 @@ const d=dx*a.nx+dy*a.ny;
 if(d<0.15){dx-=d*a.nx;dy-=d*a.ny;dx+=a.nx*0.35;dy+=a.ny*0.35}
 const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
 const sp=(70+430*me.charge)/(1+0.12*wt);
-const cr=a.pid?S.players.get(a.pid):null;
+const cr=null;
 me.vx=dx*sp+(cr?cr.vx||0:0);me.vy=dy*sp+(cr?cr.vy||0:0);me.x+=a.nx*3;me.y+=a.ny*3;
 sfx.launch(me.charge);burst(me.x-a.nx*R,me.y-a.ny*R,'#9fc4ff',5+Math.floor(me.charge*8),120,0.4);
 me.att=null;me.charge=0;me.nograb=0.12;
@@ -1134,10 +1125,21 @@ if(d<b.pr&&d>1){const f=1500*Math.pow(1-d/b.pr,2);me.vx+=dx/d*f*dt;me.vy+=dy/d*f
 const damp=1-0.08*dt;me.vx*=damp;me.vy*=damp;
 let sp=Math.hypot(me.vx,me.vy);
 if(sp>=1){me.dx0=me.vx/sp;me.dy0=me.vy/sp}
-if(sp<MINV){
+if(sp<MINV&&!me.dead){
 const ux=me.dx0===undefined?Math.cos(me.ang):me.dx0,uy=me.dy0===undefined?Math.sin(me.ang):me.dy0;
 me.vx=ux*MINV;me.vy=uy*MINV;sp=MINV;
 }
+let tp=me.tow?S.players.get(me.tow):null;
+if(!tp)S.players.forEach(q=>{if(q.tow===S.myId&&!q.spec&&!q.out)tp=q});
+if(tp&&!tp.spec&&!tp.out){
+const tdx=tp.x-me.x,tdy=tp.y-me.y,td=Math.hypot(tdx,tdy);
+if(td>TL&&td>0.001){
+const nx=tdx/td,ny=tdy/td,f=tp.a?1:0.5,rv=((tp.vx||0)-me.vx)*nx+((tp.vy||0)-me.vy)*ny;
+if(rv>0){me.vx+=nx*rv*f;me.vy+=ny*rv*f}
+const ex=td-TL;me.x+=nx*ex*f*0.5;me.y+=ny*ex*f*0.5;
+}
+}
+sp=Math.hypot(me.vx,me.vy);
 const cap=560/(1+0.08*wt);
 if(sp>cap){me.vx*=cap/sp;me.vy*=cap/sp}
 const steps=Math.max(1,Math.ceil(sp*dt/6));
@@ -1169,12 +1171,11 @@ break;
 S.players.forEach(o=>{
 if(o===me||o.spec||o.out)return;
 const dx=me.x-o.x,dy=me.y-o.y,d=Math.hypot(dx,dy);
-if(grab&&me.nograb<=0&&!me.att&&!me.tow&&o.a!==2&&d<R*2+6&&d>0.001){
-me.att={nx:dx/d,ny:dy/d,pid:o.id};me.vx=o.vx||0;me.vy=o.vy||0;me.charge=0;
+if(grab&&me.nograb<=0&&!me.att&&!me.tow&&d<R*2+26&&d>0.001){
+me.tow=o.id;
 sfx.grab();burst((me.x+o.x)/2,(me.y+o.y)/2,'#bcd2ff',6,80,0.35);
-return;
 }
-if(d<R*2&&d>0.001&&!me.att){
+if(d<R*2&&d>0.001&&!me.att&&me.tow!==o.id&&o.tow!==S.myId){
 const nx=dx/d,ny=dy/d,rv=(me.vx-o.vx)*nx+(me.vy-o.vy)*ny,f=o.a?1:0.5;
 if(rv<0){const k=1.85*(-rv)*f;me.vx+=k*nx;me.vy+=k*ny;sfx.bump();burst((me.x+o.x)/2,(me.y+o.y)/2,'#ffffff',4,80,0.3)}
 const push=(R*2-d)*f;me.x+=nx*push;me.y+=ny*push;
@@ -1237,7 +1238,7 @@ let best=-1,bd=1e9;
 L.st.forEach((s,i)=>{if(S.stDone[i])return;const d=Math.hypot(me.x-s.x,me.y-s.y);if(d<s.r+RR&&d<bd){bd=d;best=i}});
 if(best>=0)me.rep=best;
 else if(brLive()&&Math.hypot(me.x-S.br.x,me.y-S.br.y)<S.br.r+RR)me.rep=-3;
-else if(allDone()&&!L.rd.doorW.open&&swSlot(S.myId)>=0&&Math.hypot(me.x-L.rd.sw[swSlot(S.myId)].x,me.y-L.rd.sw[swSlot(S.myId)].y)<SWR+RR*0.5&&((me.att&&!me.att.pid)||Math.hypot(me.vx,me.vy)<60))me.rep=-4;
+else if(allDone()&&!L.rd.doorW.open&&swSlot(S.myId)>=0&&Math.hypot(me.x-L.rd.sw[swSlot(S.myId)].x,me.y-L.rd.sw[swSlot(S.myId)].y)<SWR+RR*0.5&&(me.att||Math.hypot(me.vx,me.vy)<60))me.rep=-4;
 else if(allDone()&&L.rd.doorW.open&&Math.hypot(me.x-L.fin.x,me.y-L.fin.y)<L.fin.r+RR)me.rep=-2;
 }
 const prev=me.holdId===undefined?-1:me.holdId;
@@ -1260,7 +1261,7 @@ const tg=me.rep===-4?L.rd.sw[swSlot(S.myId)]:me.rep===-3?S.br:me.rep===-2?L.fin:
 burst(tg.x,tg.y,'#7affc8',3,110,0.4);
 }
 }
-me.a=me.att?(me.att.pid?2:1):0;
+me.a=me.att?1:0;
 me.wa=me.att?Math.atan2(-me.att.ny,-me.att.nx):0;
 }
 
@@ -1316,6 +1317,7 @@ storm:{p:2,t:['Space rocks coming. Not friend.','Debris storm incoming. Duck, qu
 repaired:{p:2,t:['All repair done. Amaze. Now get Astrophage.','Hull is stable. Reactor needs Astrophage. Collect.','Repair complete. Gather Astrophage and open reactor door.']},
 door:{p:2,t:['Reactor door open. Bring Astrophage inside.','Door open. Thank for teamwork.','Reactor access granted. Be brave.']},
 power:{p:1,t:[a=>'Reactor eat Astrophage. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Amaze. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Good Astrophage. Reactor at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.']},
+revived:{p:2,t:['Friend is awake. Amaze.','You live again. Good good good.','Revive success. Thank.','Not dead anymore. Fist my bump.']},
 lost:{p:2,t:['Friend is in space. No can die. Retrieve friend.','Crew member lost. You are friend. Come back.','Someone left ship. Is not plan.']},
 win:{p:3,t:['Amaze. Amaze. Amaze.','Power restored. Fist my bump.','Ship fixed. Together we solve. Thank.']},
 boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boom. Is bad. Words of encouragement. Try again.','Blip-A is gone. Rocky sad. We try again.']}
@@ -1674,7 +1676,7 @@ function spawnAstro(){
 const q=astroSpot(),a=Math.random()*6.283;
 S.items.push({uid:S.nextUid++,type:'astro',meta:0,owner:null,slot:-1,x:q.x,y:q.y,vx:Math.cos(a)*55,vy:Math.sin(a)*55,last:null,nt:0});
 }
-function swSlot(id){return [...S.players.values()].filter(p=>!p.spec&&!p.out).map(p=>p.id).sort().indexOf(id)}
+function swSlot(id){return [...S.players.values()].filter(p=>!p.spec&&!p.out&&!p.dead).map(p=>p.id).sort().indexOf(id)}
 function hasPrinter(id){return S.items.some(it=>it.type==='printer'&&it.meta===id&&it.owner===id)}
 function useWrench(id){
 const w=S.items.find(it=>it.owner===id&&it.type==='tool');
@@ -1847,9 +1849,9 @@ if(sum>0&&bw>=2)S.br.prog+=dt*sum/BR_PATCH;else S.br.prog=Math.max(0,S.br.prog-d
 if(S.br.prog>=1)brEnd('patched',who);
 }
 }else if(S.time>=S.brNext&&S.time<L.limit-25)brSpawn();
-hostRespawns();
+hostRespawns(dt);
 const all=allDone();
-const act=[...S.players.values()].filter(p=>!p.spec&&!p.out);
+const act=[...S.players.values()].filter(p=>!p.spec&&!p.out&&!p.dead);
 const door=L.rd.doorW;
 if(all&&!door.open){
 if(act.length>0&&act.every(p=>p.rep===-4))S.finProg.D=(S.finProg.D||0)+dt/2;else S.finProg.D=Math.max(0,(S.finProg.D||0)-dt*0.6);
@@ -1884,7 +1886,7 @@ onMsg(m);
 }
 function bcastState(){
 const ps=[];
-S.players.forEach(p=>ps.push([p.id,p.x,p.y,p.vx,p.vy,p.a,p.rep,p.rr,p.stun,p.ang,p.wa,p.th,p.score,p.rd,p.fuel,p.sel,p.spec?1:0,p.out?1:0,p.tow||0]));
+S.players.forEach(p=>ps.push([p.id,p.x,p.y,p.vx,p.vy,p.a,p.rep,p.rr,p.stun,p.ang,p.wa,p.th,p.score,p.rd,p.fuel,p.sel,p.spec?1:0,p.out?1:0,p.tow||0,p.dead?1:0,p.rv||0]));
 const m={t:'ps',tm:S.time,bp:S.br?S.br.prog:0,ps,sp:S.stProg,fp:S.finProg,dm:S.dmg,fg:S.fProg,it:S.items.map(i=>[i.uid,i.type,i.meta,i.owner||0,i.slot,i.x,i.y,i.vx,i.vy,i.got||0])};
 for(const c of S.conns.values())if(c.open)c.send(m);
 }
@@ -1950,6 +1952,7 @@ function applyState(m){
 m.ps.forEach(e=>{
 const p=S.players.get(e[0]);if(!p)return;
 p.score=e[12];p.rd=e[13];p.spec=!!e[16];
+p.dead=!!e[19];p.rv=e[20]||0;
 if(p===S.me){if(e[17])p.out=true;return}
 p.out=!!e[17];
 p.tx=e[1];p.ty=e[2];p.vx=e[3];p.vy=e[4];p.a=e[5];p.rep=e[6];p.rr=e[7];p.stun=e[8];p.ang=e[9];p.wa=e[10];p.th=e[11];p.fuel=e[14];p.sel=e[15];p.tow=e[18]||null;
@@ -1984,11 +1987,17 @@ case 'wait':S.midWait=true;if(S.mode==='menu'){S.mode='lobby';S.phase='lobby'}sh
 case 'spawn':{
 const me=S.me;
 if(me){
-me.spec=false;me.out=false;me.x=me.tx=m.x;me.y=me.ty=m.y;me.vx=me.vy=0;me.att=null;me.stun=0;
-if(!m.keep){me.fuel=m.fu===undefined?1:m.fu;S.cam.x=m.x;S.cam.y=m.y;toast(m.fu===undefined?'You jumped in':'Back aboard','#7affc8')}
+me.spec=false;me.out=false;me.dead=!!m.dead;me.x=me.tx=m.x;me.y=me.ty=m.y;me.vx=me.vy=0;me.att=null;me.stun=0;
+if(!m.keep){me.fuel=m.fu===undefined?1:m.fu;S.cam.x=m.x;S.cam.y=m.y;toast(m.dead?'You are down. A teammate must revive you':m.fu===undefined?'You jumped in':'Back aboard',m.dead?'#ff6b6b':'#7affc8')}
 }
 break}
 case 'ps':applyState(m);break;
+case 'rev':{
+const q=S.players.get(m.id);
+if(q){q.dead=false;q.rv=0;q.stun=0;burst(q.x,q.y,'#7affc8',28,300,0.8)}
+if(m.id===S.myId)toast('You are back on your feet','#7affc8');else toast((q?q.name:'Someone')+' was revived','#7affc8');
+sfx.done();sfx.shimmer();shipSay('revived');
+break}
 case 'tb':{(S.pops=S.pops||[]).push({x:m.x,y:m.y,t:performance.now(),s:m.s});S.tFlash=performance.now();sfx.star();break}
 case 'sd':{
 S.stDone[m.i]=true;S.stProg[m.i]=1;
@@ -2701,8 +2710,14 @@ ctx.restore();
 
 function shade(h,f){const n=parseInt(h.slice(1),16);const c=v=>Math.max(0,Math.min(255,Math.round(v*f)));return 'rgb('+c(n>>16)+','+c((n>>8)&255)+','+c(n&255)+')'}
 function drawPlayer(p,isMe){
-const col=COLORS[p.color%8];
+const col=p.dead?'#8a91ab':COLORS[p.color%8];
 ctx.save();ctx.translate(p.x,p.y);
+if(p.dead){
+ctx.save();
+ctx.strokeStyle='rgba(122,255,200,.45)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.beginPath();ctx.arc(0,0,REVR,0,6.283);ctx.stroke();ctx.setLineDash([]);
+if((p.rv||0)>0){ctx.strokeStyle='#7affc8';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,REVR,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,p.rv));ctx.stroke()}
+ctx.restore();
+}
 if(S.prs&&S.prs[p.id]){const v=Math.max(0,Math.min(1,1-(S.prs[p.id]-S.time)/2));ctx.strokeStyle='#ffd93d';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,34,-Math.PI/2,-Math.PI/2+6.283*v);ctx.stroke()}
 if(p.stun>0)ctx.globalAlpha=0.55+0.45*Math.sin(S.time*40);
 const dx=Math.cos(p.ang),dy=Math.sin(p.ang);
@@ -2741,6 +2756,7 @@ ctx.fillStyle='rgba(255,255,255,.5)';
 [[-5,-3],[3,6],[-2,5]].forEach(q=>{ctx.beginPath();ctx.arc(q[0],q[1],2.2,0,6.3);ctx.fill()});
 for(const sg of[-1,1]){
 const ex=Math.cos(p.ang+sg*0.42)*8,ey=Math.sin(p.ang+sg*0.42)*8;
+if(p.dead){ctx.strokeStyle='#10162e';ctx.lineWidth=2;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(ex-3,ey-3);ctx.lineTo(ex+3,ey+3);ctx.moveTo(ex+3,ey-3);ctx.lineTo(ex-3,ey+3);ctx.stroke();continue}
 ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ex,ey,3.6,0,6.3);ctx.fill();
 ctx.fillStyle='#10162e';ctx.beginPath();ctx.arc(ex+dx*1.3,ey+dy*1.3,1.9,0,6.3);ctx.fill();
 }
@@ -2891,7 +2907,7 @@ ctx.restore();
 {
 const on=allDone()&&!L.rd.doorW.open;
 if(on){
-const ids=[...S.players.values()].filter(q=>!q.spec&&!q.out).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+const ids=[...S.players.values()].filter(q=>!q.spec&&!q.out&&!q.dead).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
 ids.forEach((q,i)=>{
 const sp=L.rd.sw[i];if(!sp||L.rd.doorW.open||!vis(sp.x-30,sp.y-30,60,60))return;
 const held=q.rep===-4,c=COLORS[q.color%8];
@@ -3204,6 +3220,15 @@ const live=S.time>=S.br.we,left=Math.max(0,Math.ceil(S.br.dl-S.time));
 const pu=0.6+0.4*Math.sin(S.time*8);
 txt(live?'HULL BREACH: PATCH IT ('+left+'s)':'HULL BREACH IN '+Math.max(0,Math.ceil(S.br.we-S.time))+'...',vw/2,Math.round(vh*0.2),20,'rgba(255,140,40,'+pu+')','center','900');
 }
+if(me.dead&&!me.out&&!me.spec){
+const pc=Math.round(Math.min(1,me.rv||0)*100);
+txt('YOU ARE DOWN',vw/2,Math.round(vh*0.2),28,'#ff6b6b','center','900');
+txt(pc>0?'Being revived '+pc+'%':'Stay close to a teammate to be revived. Grab one to keep them near.',vw/2,Math.round(vh*0.2)+30,15,'#cfd8ff','center','700');
+}
+if(!me.dead&&!me.out&&!me.spec){
+let dd=null;S.players.forEach(q=>{if(q.dead&&Math.hypot(q.x-me.x,q.y-me.y)<REVR+RR*0.4)dd=q});
+if(dd)txt('REVIVING '+dd.name.toUpperCase()+' '+Math.round(Math.min(1,dd.rv||0)*100)+'%',vw/2,Math.round(vh*0.27),20,'#7affc8','center','900');
+}
 if(me.out){
 ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,0,vw,vh);
 txt('SUCKED INTO SPACE',vw/2,vh/2-14,30,'#ff6b6b','center','900');
@@ -3257,9 +3282,9 @@ txt(l1,vw/2,cy-f1/2+6,f1,'#ff6b6b','center','900');
 txt(l2,vw/2,cy+f2/2+10,f2,'#cfd8ff','center','700');
 ctx.restore();
 }
-if(t>=0&&S.phase==='play'){let np=needPrompt();const mm=S.me;if(!np&&mm&&!mm.spec&&!mm.out&&mm.fuel<=0.01&&!(mm.att&&mm.att.towed))np=mm.att&&!mm.att.pid?{t:'Out of fuel! Aim away from where you want to go, then release to launch off.',c:'#ff8a5c'}:{t:"You're out of fuel! Grab a wall and launch off to get around the ship.",c:'#ff8a5c'};if(np){const fs=vw<520?15:18;ctx.font='900 '+fs+'px system-ui,-apple-system,Segoe UI,sans-serif';const w=Math.min(vw-16,ctx.measureText(np.t).width+36);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,fs,np.c,'center','900')}}
+if(t>=0&&S.phase==='play'){let np=needPrompt();const mm=S.me;if(!np&&mm&&!mm.spec&&!mm.out&&mm.fuel<=0.01&&1)np=mm.att?{t:'Out of fuel! Aim away from where you want to go, then release to launch off.',c:'#ff8a5c'}:{t:"You're out of fuel! Grab a wall and launch off to get around the ship.",c:'#ff8a5c'};if(np){const fs=vw<520?15:18;ctx.font='900 '+fs+'px system-ui,-apple-system,Segoe UI,sans-serif';const w=Math.min(vw-16,ctx.measureText(np.t).width+36);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,fs,np.c,'center','900')}}
 if(allDone()&&t>=0&&S.phase==='play'){
-const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
+const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out&&!p.dead)ra.push(p)});
 const yy=vh*0.2;
 if(!L.rd.doorW.open){const hn=ra.filter(p=>p.rep===-4).length;txt('REACTOR DOOR SWITCHES HELD '+hn+'/'+ra.length,vw/2,yy,20,hn===ra.length?'#7affc8':'#ff8a5c','center','900')}
 else txt('ASTROPHAGE DELIVERED '+(S.finProg.N||0)+'/'+(S.finProg.M||0),vw/2,yy,20,'#ffe45c','center','900');
