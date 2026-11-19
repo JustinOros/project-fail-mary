@@ -1189,43 +1189,57 @@ try{localStorage.setItem('zg-vname2',v.name)}catch(e){}
 return v;
 }
 if(window.speechSynthesis){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{aiPick()}}catch(e){}}
-let aiUtter=null,aiTimer=0,aiWatch2=0;
-function aiSpeak(text,force,retry){
+let aiCur=null,aiPend=null;
+function aiSpeak(text,force,pr){
 if(!window.speechSynthesis){S.aiStatus='Voice is not supported in this browser';return}
 if(!force&&(!S.aiVoice||muted))return;
-try{
-clearTimeout(aiTimer);clearTimeout(aiWatch2);
-const busy=speechSynthesis.speaking||speechSynthesis.pending;
-if(busy)speechSynthesis.cancel();
-const go=()=>{
+const item={text,p:pr||1,t:performance.now(),force:!!force};
+if(aiCur){if(!aiPend||item.force||item.p>=aiPend.p)aiPend=item;return}
+aiRun(item);
+}
+function aiNext(){
+const n=aiPend;aiPend=null;
+if(n)aiRun(n);
+}
+function aiRun(item){
+if(!item.force&&(!S.aiVoice||muted||performance.now()-item.t>7000)){aiNext();return}
 try{
 speechSynthesis.resume();
-const u=new SpeechSynthesisUtterance(text);
+const u=new SpeechSynthesisUtterance(item.text);
 u.rate=S.aiDef?1:0.92;u.pitch=S.aiDef?1:0.55;u.volume=1;u.lang='en-US';
 const v=aiPick();
 if(v){u.voice=v;u.lang=v.lang}
 const nm=v?v.name:'browser default voice';
-let started=false;
+let started=false,done=false,g1=0,g2=0;
+const fin=()=>{
+if(done)return;
+done=true;clearTimeout(g1);clearTimeout(g2);
+if(aiCur===u)aiCur=null;
+setTimeout(aiNext,60);
+};
 S.aiStatus='Asked the browser to speak with '+nm;
 u.onstart=()=>{started=true;S.aiStatus='Speaking with '+nm};
-u.onend=()=>{started=true;if(aiUtter===u)aiUtter=null;S.aiStatus='Last line played with '+nm};
-u.onerror=e=>{if(aiUtter===u)aiUtter=null;S.aiStatus='Browser error: '+(e&&e.error?e.error:'unknown');console.warn('ship voice',e&&e.error)};
-aiUtter=u;
+u.onend=()=>{S.aiStatus='Last line played with '+nm;fin()};
+u.onerror=e=>{S.aiStatus='Browser error: '+(e&&e.error?e.error:'unknown');console.warn('ship voice',e&&e.error);fin()};
+aiCur=u;
 speechSynthesis.speak(u);
-aiWatch2=setTimeout(()=>{
-if(started)return;
-if(!S.aiDef&&!retry){
+g1=setTimeout(()=>{
+if(done||started)return;
+S.aiHang=(S.aiHang||0)+1;
+try{speechSynthesis.cancel()}catch(e){}
+if(S.aiHang>=2&&!S.aiDef){
 S.aiDef=true;
 try{localStorage.setItem('zg-vname2','__default')}catch(e){}
-try{speechSynthesis.cancel()}catch(e){}
 S.aiStatus='Voice '+nm+' did not play. Switched to the browser default voice';
-aiSpeak(text,force,true);
-}else S.aiStatus='The browser did not play any audio. Check the tab is not muted and system sound is on';
-},1600);
-}catch(e){S.aiStatus='Error: '+e}
-};
-if(busy)aiTimer=setTimeout(go,120);else go();
-}catch(e){S.aiStatus='Error: '+e}
+}else S.aiStatus='The browser did not start the line. Check the tab is not muted and system sound is on';
+fin();
+},2200);
+g2=setTimeout(()=>{
+if(done)return;
+try{speechSynthesis.cancel()}catch(e){}
+fin();
+},item.text.length*150+4500);
+}catch(e){S.aiStatus='Error: '+e;aiCur=null}
 }
 function aiCycle(){
 aiInit();
@@ -1243,7 +1257,7 @@ const now=performance.now();
 if(S.aiCap&&now<S.aiCap.until&&S.aiCap.p>d.p)return;
 const v=d.t[(S.aiN=(S.aiN||0)+1)%d.t.length],text=typeof v==='function'?v(arg):v;
 S.aiCap={text,until:now+Math.max(3500,text.length*80),p:d.p};
-aiSpeak(text);
+aiSpeak(text,false,d.p);
 }
 function aiWatch(){
 if(S.phase!=='play'||!S.L||S.time<0)return;
