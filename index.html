@@ -1795,10 +1795,10 @@ break}
 case 'gift':if(S.me)S.me.fuel=Math.min(1,S.me.fuel+m.amt);break;
 case 'win':{
 S.players.forEach(q=>q.ready=false);
-S.phase='won';S.winner=m.id;S.boardRes=m;S.winT=0;
+S.phase='won';S.winner=m.id;S.boardRes=m;S.winT=0;S.winSub=['AMAZE AMAZE AMAZE','THANK','FIST MY BUMP'][Math.floor(Math.random()*3)];
 m.res.forEach(r=>{const p=S.players.get(r.id);if(p){p.score=r.sc;p.rd=r.rd}});
 const wp=S.players.get(m.id);
-if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('POWER HAS BEEN RESTORED!! THANK.','#ffd93d')}
+if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('POWER HAS BEEN RESTORED!!','#ffd93d')}
 sfx.win();S.flash=0.6;shipSay('win');
 break}
 case 'boom':{
@@ -2254,7 +2254,7 @@ const m=S.boardRes;if(!m)return;
 const last=m.last;
 const wr=m.res.find(r=>r.id===m.id);
 $('bTitle').textContent=m.boom?'SHIP DESTROYED':last?'MISSION COMPLETE':'LEVEL '+m.lvl+' COMPLETE';
-$('bSub').textContent=m.boom?'Nobody survived. You made it to level '+m.lvl+'. Better luck next mission.':last?(m.res[0].name+' is the top crew member!'):'POWER HAS BEEN RESTORED!! THANK.';
+$('bSub').textContent=m.boom?'Nobody survived. You made it to level '+m.lvl+'. Better luck next mission.':last?(m.res[0].name+' is the top crew member!'):'POWER HAS BEEN RESTORED!!';
 const tb=$('bTable');tb.textContent='';
 m.res.forEach((r,i)=>{
 const tr=document.createElement('tr');if(r.id===m.id)tr.className='win';tr.dataset.id=r.id;
@@ -3050,12 +3050,14 @@ S.toasts.forEach((o,i)=>{ctx.globalAlpha=Math.min(1,o.t);txt(o.msg,vw/2,vh*0.12+
 if(S.phase==='won'&&S.boardRes){
 const wp=S.players.get(S.boardRes.id);
 {
-const l1='POWER HAS BEEN RESTORED!! THANK.';
+const l1='POWER HAS BEEN RESTORED!!';
 let f=vw<520?26:44;
 ctx.font='900 '+f+'px system-ui,-apple-system,Segoe UI,sans-serif';
 const mw=ctx.measureText(l1).width;
 if(mw>vw-32)f=Math.floor(f*(vw-32)/mw);
 txt(l1,vw/2,vh*0.35,f,'#ffd93d','center','900');
+const sf=Math.round(f*0.7);
+txt(S.winSub||'AMAZE AMAZE AMAZE',vw/2,vh*0.35+f*1.15,sf,'#7affc8','center','900');
 }
 }
 if(S.phase==='boom'){
