@@ -1,6 +1,6 @@
 # Project Fail Mary
 
-A zero gravity co-op and competitive ship repair game that runs in the browser. Float around a broken spaceship as a five legged crawler, grab walls, push off, patch the damaged areas, then bring the whole crew to the reactor before the ship self destructs.
+A zero gravity co-op and competitive ship repair game that runs in the browser. Float around a broken spaceship as a five legged crawler, grab walls, push off, patch the damaged areas, then power the reactor with Astrophage before the ship self destructs.
 
 Play it: https://justinoros.github.io/project-fail-mary/
 
@@ -28,7 +28,8 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 - Patching a damaged area gives time back: 5 seconds per wrench it used, so a damage 3 area adds 15 seconds, shown as a green +15s. A patched hull breach adds 5 seconds. The timer can never go above the level's starting time.
 - Small crews get extra time at the start of every level: 20 seconds when playing solo and 10 seconds with two players.
 - From Level 3 on, damaged areas get worse over time (up to 3 wrenches). A spot at 3 that is ignored for 30 seconds bursts into a hull breach, then needs patching again.
-- Once every damaged area is patched, the reactor unlocks. Every active player must be inside the ring at the same time, each holding a wrench, for about 4 seconds. If someone leaves, the progress slowly drains. Each player's wrench is used up at the end. The player with the most points that round gets the round bonus.
+- Once every damaged area is patched, the reactor wakes up inside a sealed dome. Each player has a switch outside the dome in their own color. Every active player must hold their own switch at the same time for about 2 seconds to open the reactor door. Once open, the door stays open.
+- Glowing Astrophage (sparkle icon) drifts around the ship on its own from the start of the round. Fly into it to pick it up. Carry it into the dome and enter the reactor ring to deliver it. When enough Astrophage has been delivered (shown as a counter), the reactor powers up and the round is won. The amount needed grows with the level and is lower for small crews. If supply runs short, more Astrophage appears.
 - A self destruct timer is running. If time runs out, the ship explodes and everyone loses.
 - After each round a scoreboard shows everyone's points until the host starts the next level.
 - There are 10 levels, and each one is bigger and nastier than the last.
@@ -66,10 +67,10 @@ You float in zero gravity, so momentum is everything.
 
 - Every player has their own 3D printer, which they carry like any item. It is heavy and cannot be dropped or thrown. On Levels 1 and 2 everyone also starts with one wrench.
 - Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, and you can throw it to a friend who needs it.
-- Printing is automatic. Stand in a damaged area circle, a breach, or the reactor ring with gray filament and no wrench, and your printer makes a wrench (2 seconds) which is then used on the repair. Touch a locked door while carrying filament of its color and the keycard is printed and the door opens. Players in the same circle do not print more wrenches than the spot needs.
+- Printing is automatic. Stand in a damaged area circle or a breach with gray filament and no wrench, and your printer makes a wrench (2 seconds) which is then used on the repair. Touch a locked door while carrying filament of its color and the keycard is printed and the door opens. Players in the same circle do not print more wrenches than the spot needs.
 - A banner at the bottom tells you what you are missing, for example "A wrench is required to repair this damage (1 Gray Filament)." or "A Blue keycard is required to open this door (1 Blue Filament)."
 - You can also press E (Y on a controller or phone) to print by hand, for example to make a spare wrench to give a friend. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
-- Wrenches can be dropped and passed to friends. Damaged areas, hull breach patches (2 wrenches) and the reactor (one per player) use them up.
+- Wrenches can be dropped and passed to friends. Damaged areas and hull breach patches (2 wrenches) use them up.
 
 ## Colored doors and keycards
 

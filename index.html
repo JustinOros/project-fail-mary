@@ -194,7 +194,8 @@ const ICE=[
 ];
 const PEEROPT={config:{iceServers:ICE,iceCandidatePoolSize:4},debug:1};
 const MINV=34,MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9;
-const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160}};
+const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160},astro:{name:'Astrophage',icon:'✨',weight:0,kick:70}};
+const SWR=20;
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
 const KEYNAME=['Red','Blue','Green','Yellow','Purple'];
 function rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+a+')'}
@@ -400,23 +401,43 @@ L.doors.forEach(d=>keepOut.push({x:d.x-150,y:d.y-d.h/2-40,w:300,h:d.h+80}));
 const ov=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const free=(r,pad)=>{const q={x:r.x-pad,y:r.y-pad,w:r.w+2*pad,h:r.h+2*pad};return !keepOut.some(k=>ov(q,k))&&!L.walls.some(k=>!k.hull&&ov(q,k))};
 const sc=1+Math.ceil(n/2);
+{
+const room=L.rooms[nr-1],top=rnd()<0.5;
+const x=(room.x0+room.x1)/2,y=top?T+36:h-T-36;
+L.fin={x,y,r:48,top,t:3+n*0.35};
+const half=Math.min(230,(room.x1-room.x0)/2-90),tk=36,dw=60,y0=top?T:h-T,sgn=top?1:-1,th=30;
+const gap=dw/half+0.04,tc=Math.PI/2;
+const nt=Math.ceil(Math.PI*half/18);
+for(let i=0;i<=nt;i++){
+const a=Math.PI*i/nt;
+if(Math.abs(a-tc)<gap)continue;
+const px=x+half*Math.cos(a),py=y0+sgn*half*Math.sin(a);
+L.walls.push({x:px-th/2,y:py-th/2,w:th,h:th,hull:false,slick:false,arc:true});
+}
+const fy=y0+sgn*half-tk/2;
+const doorW={x:x-dw,y:fy,w:dw*2,h:tk,hull:false,slick:false,rdoor:true,open:false};
+L.walls.push(doorW);
+const sw=[];
+for(let i=0;i<8;i++){
+const k=Math.floor(i/2),side=i%2===0?1:-1,col=k%4,row=Math.floor(k/4);
+const al=(dw+SWR+10+col*44)/half,rho=half+th/2+SWR+4+row*46,a=tc+side*al;
+sw.push({x:x+rho*Math.cos(a),y:y0+sgn*rho*Math.sin(a)});
+}
+L.rd={x,half,top,fy,tk,dw,y0,sgn,gap,doorW,sw};
+keepOut.push({x:x-half-70,y:top?T:h-T-half-140,w:half*2+140,h:half+140});
+}
 for(let k=0;k<sc;k++){
 for(let tries=0;tries<40;tries++){
 const room=L.rooms[k%nr];
 const x=rr(room.x0+100,room.x1-100),top=rnd()<0.5;
 const y=top?T+30:h-T-30;
+if(top===L.fin.top&&Math.abs(x-L.fin.x)<L.rd.half+120)continue;
 if(L.st.some(s=>Math.hypot(s.x-x,s.y-y)<220))continue;
 L.st.push({x,y,r:34,top,t:2.6+n*0.2,need:coopNeed(k,n)});
 keepOut.push({x:x-90,y:top?T:y-90,w:180,h:130});
 break;
 }
-if(L.st.length<=k){const room=L.rooms[k%nr];const top=k%2===0;L.st.push({x:(room.x0+room.x1)/2+k*20,y:top?T+30:h-T-30,r:34,top,t:2.6+n*0.2,need:coopNeed(k,n)})}
-}
-{
-const room=L.rooms[nr-1],top=rnd()<0.5;
-const x=(room.x0+room.x1)/2,y=top?T+36:h-T-36;
-L.fin={x,y,r:48,top,t:3+n*0.35};
-keepOut.push({x:x-130,y:top?T:y-130,w:260,h:170});
+if(L.st.length<=k){const room=L.rooms[k%nr];const top=(k%nr===nr-1)?!L.fin.top:k%2===0;L.st.push({x:(room.x0+room.x1)/2+k*20,y:top?T+30:h-T-30,r:34,top,t:2.6+n*0.2,need:coopNeed(k,n)})}
 }
 for(let i=0;i<8;i++)L.spawn.push({x:T+90+(i%2)*60,y:h/2-140+i*40});
 const no=3+n*2;
@@ -469,12 +490,19 @@ const ns=n>=2?Math.min(8,n):0;
 for(let k=0;k<ns;k++){
 const room=L.rooms[1+Math.floor(rnd()*(nr-1))];
 const half=(room.x1-room.x0)/2;
-L.sparks.push({cx:(room.x0+room.x1)/2,cy:rr(h*0.3,h*0.7),ax:Math.max(30,rr(40,Math.min(260,half-100))),ay:rr(60,h*0.28),fx:rr(0.5,1.2),fy:rr(0.5,1.2),ph:rr(0,6.28)});
+const sp={cx:(room.x0+room.x1)/2,cy:rr(h*0.3,h*0.7),ax:Math.max(30,rr(40,Math.min(260,half-100))),ay:rr(60,h*0.28),fx:rr(0.5,1.2),fy:rr(0.5,1.2),ph:rr(0,6.28)};
+if(room.i===nr-1){
+const lo=L.fin.top?L.rd.fy+L.rd.tk+70:T+30,hi=L.fin.top?h-T-30:L.rd.fy-70;
+sp.ay=Math.max(20,Math.min(sp.ay,(hi-lo)/2-10));
+sp.cy=Math.max(lo+sp.ay,Math.min(hi-sp.ay,sp.cy));
+}
+L.sparks.push(sp);
 }
 const nv=n>=3?Math.floor(n/2):0;
 for(let k=0;k<nv;k++){
 const room=L.rooms[1+Math.floor(rnd()*(nr-1))];
-const side=rnd()<0.5?0:1;
+let side=rnd()<0.5?0:1;
+if(room.i===nr-1&&side===(L.fin.top?0:1))side=1-side;
 const x=rr(room.x0+120,room.x1-120);
 const dxx=rr(-0.3,0.3),dyy=side===0?1:-1,l=Math.hypot(dxx,dyy);
 const v={x,side,dx:dxx/l,dy:dyy/l,per:rr(4.5,6.5),on:2.2,ph:rr(0,6),len:380,half:70};
@@ -553,6 +581,7 @@ const room=L.rooms[Math.floor(Math.random()*L.rooms.length)];
 const top=Math.random()<0.5;
 const x=room.x0+90+Math.random()*Math.max(10,room.x1-room.x0-180),y=top?L.T+14:L.h-L.T-14;
 if(L.st.some(q=>Math.hypot(q.x-x,q.y-y)<170))continue;
+if(top===L.fin.top&&Math.abs(x-L.fin.x)<L.rd.half+100)continue;
 best={x,y,rx:(room.x0+room.x1)/2,ry:L.h/2};break;
 }
 if(!best){const room=L.rooms[0];best={x:(room.x0+room.x1)/2,y:L.T+14,rx:(room.x0+room.x1)/2,ry:L.h/2}}
@@ -624,17 +653,18 @@ if(!pr)return{t:noPrinter,c:'#ff8a5c'};
 if(!gray)return{t:wn(2-have)+' required to patch the breach ('+(2-have)+' Gray Filament).',c:'#ff8a5c'};
 return null;
 }
-if(r===-2&&allDone()){
-if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
-if(wr===0){
-if(!pr)return{t:noPrinter,c:'#ff8a5c'};
-if(!gray)return{t:'A wrench is required to power the reactor (1 Gray Filament).',c:'#ff8a5c'};
-return null;
-}
+if(allDone()){
+const L=S.L,rd=L.rd,N=S.finProg.N||0,M=S.finProg.M||0;
 const ra=[];S.players.forEach(q=>{if(!q.spec&&!q.out)ra.push(q)});
-const ri=ra.filter(q=>q.rep===-2).length;
-if(ri<ra.length)return{t:'Waiting for the whole crew to enter the ring ('+ri+'/'+ra.length+')',c:'#ffd93d'};
-return{t:'Powering the reactor... '+Math.round(Math.min(1,S.finProg.R||0)*100)+'%',c:'#7affc8'};
+const held=ra.filter(q=>q.rep===-4).length;
+const ac=mine.filter(it=>it.type==='astro').length;
+if(!rd.doorW.open){
+if(r===-4)return{t:'Holding your switch... crew '+held+'/'+ra.length+(held===ra.length?'  '+Math.round(Math.min(1,S.finProg.D||0)*100)+'%':'. Everyone must hold their own switch.'),c:held===ra.length?'#7affc8':'#ffd93d'};
+const sx=rd.x-me.x,sy=(rd.fy+rd.tk/2)-me.y;
+if(Math.hypot(sx,sy)<420)return{t:'Hold the switch with your color. The whole crew must hold theirs to open the reactor door.',c:'#ffd93d'};
+}else{
+if(r===-2)return ac>0?{t:'Delivering Astrophage... ('+N+'/'+M+')',c:'#7affc8'}:{t:'Bring Astrophage here to power the reactor ('+N+'/'+M+').',c:'#ffd93d'};
+}
 }
 for(const w of S.L.walls){
 if(w.door===undefined||w.open)continue;
@@ -1017,7 +1047,8 @@ let best=-1,bd=1e9;
 L.st.forEach((s,i)=>{if(S.stDone[i])return;const d=Math.hypot(me.x-s.x,me.y-s.y);if(d<s.r+RR&&d<bd){bd=d;best=i}});
 if(best>=0)me.rep=best;
 else if(brLive()&&Math.hypot(me.x-S.br.x,me.y-S.br.y)<S.br.r+RR)me.rep=-3;
-else if(allDone()&&Math.hypot(me.x-L.fin.x,me.y-L.fin.y)<L.fin.r+RR)me.rep=-2;
+else if(allDone()&&!L.rd.doorW.open&&swSlot(S.myId)>=0&&Math.hypot(me.x-L.rd.sw[swSlot(S.myId)].x,me.y-L.rd.sw[swSlot(S.myId)].y)<SWR+RR*0.5&&((me.att&&!me.att.pid)||Math.hypot(me.vx,me.vy)<60))me.rep=-4;
+else if(allDone()&&L.rd.doorW.open&&Math.hypot(me.x-L.fin.x,me.y-L.fin.y)<L.fin.r+RR)me.rep=-2;
 }
 const prev=me.holdId===undefined?-1:me.holdId;
 const resettable=prev!==-1&&!(prev>=0&&prev<1000&&S.stDone[prev])&&!(prev>=1000&&S.fTaken.has(prev-1000));
@@ -1035,7 +1066,7 @@ if(me.rep!==-1){
 S.tickT-=dt;
 if(S.tickT<=0){
 S.tickT=0.22;sfx.tick();
-const tg=me.rep===-3?S.br:me.rep===-2?L.fin:me.rep>=1000?L.fuel[me.rep-1000]:L.st[me.rep];
+const tg=me.rep===-4?L.rd.sw[swSlot(S.myId)]:me.rep===-3?S.br:me.rep===-2?L.fin:me.rep>=1000?L.fuel[me.rep-1000]:L.st[me.rep];
 burst(tg.x,tg.y,'#7affc8',3,110,0.4);
 }
 }
@@ -1173,8 +1204,8 @@ target:()=>{const k=tutKey(),w=k&&S.L.walls.find(q=>q.door===k.meta&&!q.open);re
 text:()=>'Fly into stars for bonus points.',
 target:()=>tutNearStar()},
 {id:'final',max:30,urgent:true,ok:()=>allDone(),fin:()=>false,
-text:()=>'All damaged areas patched! Everyone needs a wrench, then the whole crew flies into the glowing reactor ring.',
-target:()=>({x:S.L.fin.x,y:S.L.fin.y,r:S.L.fin.r,d:Math.hypot(S.me.x-S.L.fin.x,S.me.y-S.L.fin.y)})},
+text:()=>'All damaged areas patched! Collect drifting Astrophage, then the whole crew holds their colored switches to open the reactor door. Carry the Astrophage inside to power it.',
+target:()=>{const d=S.L.rd.doorW,tx=d.x+d.w/2,ty=d.y+d.h/2;return{x:tx,y:ty,r:40,d:Math.hypot(S.me.x-tx,S.me.y-ty)}}},
 {id:'hurry',max:7,urgent:true,ok:()=>S.L.limit-S.time<30&&!allDone(),fin:()=>false,
 text:()=>'Hurry! The ship self destructs in under 30 seconds.',
 target:()=>null},
@@ -1298,8 +1329,29 @@ ids0().forEach(p=>{
 giveItem(p.id,'printer',p.id);
 if(L.n<=2)giveItem(p.id,'tool',0);
 });
+const need=astroNeed(L.n,pc);
+S.finProg={N:0,M:need,D:0};S.astroT=6;
+for(let k=0;k<need+1;k++)spawnAstro();
 emit({t:'eng'});
 }
+function astroNeed(n,pc){const b=Math.min(8,2+Math.ceil(n/2));return pc<=2?Math.max(2,b-1):b}
+function astroSpot(){
+const L=S.L,rd=L.rd;
+for(let t=0;t<60;t++){
+const room=L.rooms[Math.floor(Math.random()*L.rooms.length)];
+const x=room.x0+90+Math.random()*Math.max(10,room.x1-room.x0-180),y=L.T+90+Math.random()*(L.h-2*L.T-180);
+const inRd=Math.abs(x-rd.x)<rd.half+60&&(rd.top?y<rd.fy+rd.tk+60:y>rd.fy-60);
+if(inRd)continue;
+if(L.walls.some(w=>!w.hull&&x>w.x-30&&x<w.x+w.w+30&&y>w.y-30&&y<w.y+w.h+30))continue;
+return{x,y};
+}
+return{x:L.rooms[0].x0+200,y:L.h/2};
+}
+function spawnAstro(){
+const q=astroSpot(),a=Math.random()*6.283;
+S.items.push({uid:S.nextUid++,type:'astro',meta:0,owner:null,slot:-1,x:q.x,y:q.y,vx:Math.cos(a)*55,vy:Math.sin(a)*55,last:null,nt:0});
+}
+function swSlot(id){return [...S.players.values()].filter(p=>!p.spec&&!p.out).map(p=>p.id).sort().indexOf(id)}
 function hasPrinter(id){return S.items.some(it=>it.type==='printer'&&it.meta===id&&it.owner===id)}
 function useWrench(id){
 const w=S.items.find(it=>it.owner===id&&it.type==='tool');
@@ -1335,8 +1387,6 @@ if(p.rep>=0&&p.rep<1000&&!S.stDone[p.rep]){
 if(wrenchesAt(p.rep)+pend(p.rep)<S.dmg[p.rep])handlePrint(p.id,gray);
 }else if(p.rep===-3&&brLive()){
 if(wrenchesAt(-3)+pend(-3)<2)handlePrint(p.id,gray);
-}else if(p.rep===-2&&allDone()){
-if(wrenchCount(p.id)===0)handlePrint(p.id,gray);
 }
 });
 }
@@ -1403,6 +1453,10 @@ if(bp.d<S.br.r+8){it.x=S.br.rx;it.y=S.br.ry;it.vx=it.vy=0;return}
 }
 it.x+=it.vx*dt;it.y+=it.vy*dt;
 const d=1-0.03*dt;it.vx*=d;it.vy*=d;
+if(it.type==='astro'){
+const sp=Math.hypot(it.vx,it.vy)||1,a=Math.atan2(it.vy,it.vx)+(Math.random()-0.5)*0.9*dt;
+it.vx=Math.cos(a)*55;it.vy=Math.sin(a)*55;
+}
 for(const w of S.L.walls){
 if(w.open)continue;
 const cx=Math.max(w.x,Math.min(it.x,w.x+w.w)),cy=Math.max(w.y,Math.min(it.y,w.y+w.h));
@@ -1412,7 +1466,7 @@ if(dd<1e-6){dx=0;dy=-1;dd=1}
 const nx=dx/dd,ny=dy/dd;
 it.x=cx+nx*r;it.y=cy+ny*r;
 const vn=it.vx*nx+it.vy*ny;
-if(vn<0){it.vx-=1.6*vn*nx;it.vy-=1.6*vn*ny}
+if(vn<0){it.vx-=(it.type==='astro'?2:1.6)*vn*nx;it.vy-=(it.type==='astro'?2:1.6)*vn*ny}
 }
 }
 });
@@ -1473,14 +1527,28 @@ if(S.br.prog>=1)brEnd('patched',who);
 hostRespawns();
 const all=allDone();
 const act=[...S.players.values()].filter(p=>!p.spec&&!p.out);
-const inR=act.filter(p=>p.rep===-2);
-const armed=inR.filter(p=>wrenchCount(p.id)>0).length;
-let v=S.finProg.R||0;
-if(all&&act.length>0&&inR.length===act.length&&armed===act.length)v+=dt/L.fin.t;else v=Math.max(0,v-dt*0.25);
-S.finProg.R=v;
-if(v>=1&&S.phase==='play'){
-const ids=act.map(p=>p.id);
-ids.forEach(id=>useWrench(id));
+const door=L.rd.doorW;
+if(all&&!door.open){
+if(act.length>0&&act.every(p=>p.rep===-4))S.finProg.D=(S.finProg.D||0)+dt/2;else S.finProg.D=Math.max(0,(S.finProg.D||0)-dt*0.6);
+if(S.finProg.D>=1){S.finProg.D=1;emit({t:'dopen',k:'R'})}
+}
+if(all&&door.open){
+act.forEach(p=>{
+if(p.rep!==-2)return;
+const mine=S.items.filter(it=>it.owner===p.id&&it.type==='astro');
+if(!mine.length)return;
+S.items=S.items.filter(it=>!mine.includes(it));
+S.finProg.N=(S.finProg.N||0)+mine.length;
+emit({t:'adep',id:p.id,n:mine.length,tot:S.finProg.N,need:S.finProg.M});
+});
+}
+S.astroT=(S.astroT||0)-dt;
+if(S.astroT<=0){
+S.astroT=6;
+const have=S.items.filter(it=>it.type==='astro').length+(S.finProg.N||0);
+if(have<(S.finProg.M||0))spawnAstro();
+}
+if((S.finProg.N||0)>=(S.finProg.M||99)&&S.phase==='play'&&act.length>0){
 const top=act.slice().sort((a,b)=>b.rd-a.rd)[0];
 roundWin(top.id);
 }
@@ -1581,7 +1649,7 @@ m.sd.forEach(i=>{S.stDone[i]=true;S.stProg[i]=1});
 m.pk.forEach(i=>S.taken.add(i));
 m.fk.forEach(i=>S.fTaken.add(i));
 S.br=m.br||null;
-m.dr.forEach(k=>{const w=S.L.walls.find(q=>q.door===k);if(w)w.open=true});
+m.dr.forEach(k=>{const w=k==='R'?S.L.rd.doorW:S.L.walls.find(q=>q.door===k);if(w)w.open=true});
 if(S.me){
 S.me.spec=!m.act;
 if(m.act){S.me.x=S.me.tx=m.x;S.me.y=S.me.ty=m.y;S.cam.x=m.x;S.cam.y=m.y;toast('Welcome back','#7affc8')}
@@ -1642,6 +1710,15 @@ S.shake=45;
 break}
 case 'tolobby':S.midWait=false;S.mode='lobby';S.phase='lobby';S.L=null;show('lobby');renderLobby();break;
 case 'dopen':{
+if(m.k==='R'){
+const w=S.L.rd.doorW;
+if(!w.open){
+w.open=true;
+burst(w.x+w.w/2,w.y+w.h/2,'#c58bff',50,460,1);
+toast('Reactor door open! Fly in and deliver the Astrophage','#c58bff');
+sfx.done();S.shake=Math.max(S.shake,8);
+}
+break}
 const w=S.L.walls.find(q=>q.door===m.k);
 if(w){
 w.open=true;
@@ -1651,6 +1728,7 @@ toast((q?q.name:'Someone')+' unlocked the '+KEYNAME[m.k]+' door','#ffd93d');
 sfx.done();S.shake=Math.max(S.shake,6);
 }
 break}
+case 'adep':{const q=S.players.get(m.id);toast((q?q.name:'Someone')+' delivered '+m.n+' Astrophage ('+m.tot+'/'+m.need+')','#ffe45c');sfx.done();burst(S.L.fin.x,S.L.fin.y,'#ffe45c',30,300,0.9);break}
 case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Damaged area '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn()}break}
 case 'dgb':{toast('Damaged area '+(m.i+1)+' burst open','#ff6b6b');break}
 case 'eng':{
@@ -1756,7 +1834,7 @@ sendLobby();
 conn.send({t:'late',lvl:S.lvl,seed:S.seed,tm:S.time,lm:S.L.limit,act:!!gh,x:sx,y:sy,
 sd:S.stDone.map((v,i)=>v?i:-1).filter(i=>i>=0),
 pk:[...S.taken],fk:[...S.fTaken],br:S.br,
-dr:S.L.walls.filter(w=>w.door!==undefined&&w.door!==null&&w.open).map(w=>w.door)});
+dr:S.L.walls.filter(w=>w.door!==undefined&&w.door!==null&&w.open).map(w=>w.door).concat(S.L.rd.doorW.open?['R']:[])});
 }else{
 np.spec=true;
 sendLobby();
@@ -2371,8 +2449,29 @@ if(on&&Math.random()<0.7)part(v.x+(Math.random()-0.5)*80,v.side===0?L.T+6:L.h-L.
 ctx.fillStyle=warn?'#ff9f1a':'#1a2442';
 ctx.fillRect(v.x-v.half*0.6,v.side===0?L.T:L.h-L.T-10,v.half*1.2,10);
 }
+{
+const rd=L.rd,a0=rd.top?0:Math.PI,a1=a0+Math.PI,tc=a0+Math.PI/2;
+ctx.save();ctx.lineCap='butt';
+[[34,'rgba(140,180,255,.5)'],[30,'#34456a']].forEach(q=>{
+ctx.lineWidth=q[0];ctx.strokeStyle=q[1];
+ctx.beginPath();ctx.arc(rd.x,rd.y0,rd.half,a0,tc-rd.gap);ctx.stroke();
+ctx.beginPath();ctx.arc(rd.x,rd.y0,rd.half,tc+rd.gap,a1);ctx.stroke();
+});
+ctx.restore();
+}
 for(const w of L.walls){
 if(!vis(w.x,w.y,w.w,w.h))continue;
+if(w.arc)continue;
+if(w.rdoor){
+if(w.open)continue;
+const on=allDone(),pu=0.6+0.4*Math.sin(t*3),kc=on?'#c58bff':'#59627e',dv=Math.min(1,S.finProg.D||0);
+if(on){const g=ctx.createLinearGradient(0,w.y-40,0,w.y+w.h+40);g.addColorStop(0,rgba(kc,0));g.addColorStop(0.5,rgba(kc,0.35*pu));g.addColorStop(1,rgba(kc,0));ctx.fillStyle=g;ctx.fillRect(w.x,w.y-40,w.w,w.h+80)}
+ctx.fillStyle=rgba(kc,0.5);ctx.fillRect(w.x,w.y,w.w,w.h);
+ctx.fillStyle=rgba('#7affc8',0.8);ctx.fillRect(w.x,w.y,w.w*dv,w.h);
+ctx.strokeStyle=kc;ctx.lineWidth=3;ctx.strokeRect(w.x,w.y,w.w,w.h);
+ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🔒',w.x+w.w/2,w.y+w.h/2+1);
+continue;
+}
 if(w.door!==undefined){
 if(w.open)continue;
 const kc=KEYCOL[w.color],pu=0.6+0.4*Math.sin(t*3);
@@ -2435,7 +2534,7 @@ ctx.restore();
 });
 }
 {
-const f=L.fin,open=allDone();
+const f=L.fin,open=allDone()&&L.rd.doorW.open;
 ctx.save();ctx.translate(f.x,f.y);
 const pulse=0.6+0.4*Math.sin(t*4);
 const g=ctx.createRadialGradient(0,0,10,0,0,120);g.addColorStop(0,open?'rgba(197,139,255,'+(0.35+0.25*pulse)+')':'rgba(90,100,130,.2)');g.addColorStop(1,'rgba(0,0,0,0)');
@@ -2445,10 +2544,25 @@ ctx.fillStyle='#1a2340';ctx.strokeStyle=open?'#c58bff':'#5a6488';ctx.lineWidth=4
 ctx.beginPath();ctx.roundRect(-58,-34,116,68,14);ctx.fill();ctx.stroke();
 ctx.font='34px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(open?'⚛️':'🔒',0,3);
 if(open){
-const v=S.finProg.R||0;
+const v=S.finProg.M?(S.finProg.N||0)/S.finProg.M:0;
+txt((S.finProg.N||0)+'/'+(S.finProg.M||0)+' ✨',0,f.top?74:-74,18,'#ffe45c','center','900');
 if(v>0){ctx.strokeStyle='#c58bff';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,f.r+12,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,v));ctx.stroke()}
 }
 ctx.restore();
+}
+{
+const on=allDone()&&!L.rd.doorW.open;
+const ids=[...S.players.values()].filter(q=>!q.spec&&!q.out).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+ids.forEach((q,i)=>{
+const sp=L.rd.sw[i];if(!sp||L.rd.doorW.open||!vis(sp.x-30,sp.y-30,60,60))return;
+const held=q.rep===-4,c=COLORS[q.color%8];
+ctx.save();ctx.translate(sp.x,sp.y);
+ctx.fillStyle='#10172c';ctx.beginPath();ctx.arc(0,0,SWR+4,0,6.3);ctx.fill();
+ctx.strokeStyle=c;ctx.lineWidth=on?4:2;ctx.globalAlpha=on?1:0.45;ctx.beginPath();ctx.arc(0,0,SWR+4,0,6.3);ctx.stroke();
+ctx.fillStyle=rgba(c,held?0.95:on?0.3+0.15*Math.sin(t*4):0.15);ctx.beginPath();ctx.arc(0,0,SWR-3,0,6.3);ctx.fill();
+ctx.strokeStyle=held?'#10172c':'#ffffff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(0,1,6,-1.15,Math.PI*1.5+0.35+0.0);ctx.stroke();ctx.beginPath();ctx.moveTo(0,-9);ctx.lineTo(0,0);ctx.stroke();
+ctx.restore();
+});
 }
 L.pick.forEach((k,i)=>{
 if(S.taken.has(i)||!vis(k.x-30,k.y-30,60,60))return;
@@ -2460,10 +2574,10 @@ ctx.font='24px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillT
 S.items.forEach(it=>{
 if(it.owner||!vis(it.x-30,it.y-30,60,60))return;
 const d=ITEMS[it.type];if(!d)return;
-const gc=(it.type==='key'||(it.type==='fil'&&it.meta>=0))?KEYCOL[it.meta]:it.type==='fil'?'#b8bcc6':'#ffd93d';
+const gc=(it.type==='key'||(it.type==='fil'&&it.meta>=0))?KEYCOL[it.meta]:it.type==='fil'?'#b8bcc6':it.type==='astro'?'#ffe45c':'#ffd93d';
 const g=ctx.createRadialGradient(it.x,it.y,2,it.x,it.y,28);g.addColorStop(0,rgba(gc,0.6));g.addColorStop(1,rgba(gc,0));
 ctx.fillStyle=g;ctx.fillRect(it.x-30,it.y-30,60,60);
-ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(d.icon,it.x,it.y+1);
+ctx.font=(it.type==='astro'?26+Math.round(Math.sin(t*5+it.uid)*3):22)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(d.icon,it.x,it.y+1);
 });
 L.fuel.forEach((k,i)=>{
 if(S.fTaken.has(i)||!vis(k.x-30,k.y-30,60,60))return;
@@ -2543,6 +2657,7 @@ light(lt.x,lt.y,a>0.9?270:340);
 S.players.forEach(p=>{if(p!==me&&!p.spec&&!p.out)light(p.x,p.y,110)});
 L.st.forEach((s,i)=>{if(!S.stDone[i])light(s.x,s.y,140)});
 if(allDone())light(L.fin.x,L.fin.y,200);
+if(allDone()&&!L.rd.doorW.open)L.rd.sw.forEach(q=>light(q.x,q.y,90));
 L.pick.forEach((k,i)=>{if(!S.taken.has(i))light(k.x,k.y,60)});
 L.fuel.forEach((k,i)=>{if(!S.fTaken.has(i))light(k.x,k.y,70)});
 L.sparks.forEach(s=>{const p=sparkPos(s,S.time);light(p.x,p.y,130)});
@@ -2586,7 +2701,11 @@ function drawArrows(L,sc){
 const targets=[];
 L.st.forEach((s,i)=>{if(!S.stDone[i])targets.push({x:s.x,y:s.y,c:'#ff6b6b'})});
 if(S.br)targets.push({x:S.br.x,y:S.br.y,c:'#ff9f1a'});
-if(!targets.length)targets.push({x:L.fin.x,y:L.fin.y,c:'#c58bff'});
+if(!targets.length){
+const dw=L.rd.doorW;
+if(dw.open)targets.push({x:L.fin.x,y:L.fin.y,c:'#c58bff'});else targets.push({x:dw.x+dw.w/2,y:dw.y+dw.h/2,c:'#c58bff'});
+S.items.forEach(it=>{if(!it.owner&&it.type==='astro')targets.push({x:it.x,y:it.y,c:'#ffe45c'})});
+}
 targets.forEach(t=>{
 const sx=(t.x-S.cam.x)*sc+vw/2,sy=(t.y-S.cam.y)*sc+vh/2;
 if(sx>40&&sx<vw-40&&sy>40&&sy<vh-40)return;
@@ -2718,7 +2837,7 @@ function drawHud(L,sc){
 const me=S.me,t=S.time;
 txt('BLIP-A  LEVEL '+L.n+' / '+MAXL+'  '+L.name.toUpperCase(),16,22,18,'#fff','left','800');
 const done=S.stDone.filter(Boolean).length;
-txt(allDone()?'REACTOR: EVERYONE IN THE RING WITH A WRENCH':'Damaged areas patched '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
+txt(allDone()?(L.rd.doorW.open?'REACTOR: DELIVER THE ASTROPHAGE':'REACTOR: HOLD ALL SWITCHES TO OPEN THE DOOR'):'Damaged areas patched '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
 if(S.phase==='won'||S.phase==='board')txt('SELF DESTRUCT HALTED',16,70,16,'#7affc8','left','900');
 if(t>=0&&S.phase==='play'){
 const rem=Math.max(0,L.limit-t),low=rem<=20;
@@ -2781,9 +2900,9 @@ ctx.restore();
 if(t>=0&&S.phase==='play'){let np=needPrompt();const mm=S.me;if(!np&&mm&&!mm.spec&&!mm.out&&mm.fuel<=0.01&&!(mm.att&&mm.att.towed))np=mm.att&&!mm.att.pid?{t:'Out of fuel! Aim away from where you want to go, then release to launch off.',c:'#ff8a5c'}:{t:"You're out of fuel! Grab a wall and launch off to get around the ship.",c:'#ff8a5c'};if(np){const fs=vw<520?15:18;ctx.font='900 '+fs+'px system-ui,-apple-system,Segoe UI,sans-serif';const w=Math.min(vw-16,ctx.measureText(np.t).width+36);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,fs,np.c,'center','900')}}
 if(allDone()&&t>=0&&S.phase==='play'){
 const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
-const ri=ra.filter(p=>p.rep===-2),rw=ri.filter(p=>wrenchCount(p.id)>0).length;
-const okr=ri.length===ra.length&&rw===ra.length;
-txt('WRENCHES IN RING '+rw+'/'+ra.length+'   PLAYERS IN RING '+ri.length+'/'+ra.length,vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,okr?'#7affc8':'#ff8a5c','center','900');
+const yy=vh*0.2+(S.tut.on&&S.tut.cur?64:0);
+if(!L.rd.doorW.open){const hn=ra.filter(p=>p.rep===-4).length;txt('REACTOR DOOR SWITCHES HELD '+hn+'/'+ra.length,vw/2,yy,20,hn===ra.length?'#7affc8':'#ff8a5c','center','900')}
+else txt('ASTROPHAGE DELIVERED '+(S.finProg.N||0)+'/'+(S.finProg.M||0),vw/2,yy,20,'#ffe45c','center','900');
 }
 if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);
