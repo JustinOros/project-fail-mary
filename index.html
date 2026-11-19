@@ -143,7 +143,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <button id="cog" title="Settings">⚙️</button>
 <button id="chatBtn" title="Chat" style="display:none">💬</button>
 <div id="codeChip" title="Copy invite link"><b id="codeChipTx"></b><span>📋</span></div>
-<button id="emoBtn" title="Emotes (V)" style="display:none">😀</button>
+<button id="emoBtn" title="Emotes" style="display:none">😀</button>
 <div id="emoWheel"><div class="emoHub"></div></div>
 <div id="settings" class="screen hidden">
 <div class="card">
@@ -863,10 +863,14 @@ if(rv<0){const k=1.85*(-rv)*f;me.vx+=k*nx;me.vy+=k*ny;sfx.bump();burst((me.x+o.x
 const push=(R*2-d)*f;me.x+=nx*push;me.y+=ny*push;
 }
 });
-if(S.phase==='play'&&me.fuel<=0.9){
+if(S.phase==='play'&&!me.out){
 for(let i=0;i<L.fuel.length;i++){
 if(S.fTaken.has(i)||S.fPending.has(i))continue;
-if(Math.hypot(me.x-L.fuel[i].x,me.y-L.fuel[i].y)<R+24){
+if(Math.hypot(me.x-L.fuel[i].x,me.y-L.fuel[i].y)<R+30){
+if(me.fuel>=0.995){
+if(!S.fullT||S.time-S.fullT>2.5){S.fullT=S.time;toast('Thruster tank is full','#4da3ff')}
+continue;
+}
 S.fPending.add(i);
 if(S.isHost)handleFuel(S.myId,i);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'fuel',i});
 }
@@ -2672,8 +2676,6 @@ fire.forEach(k=>{
 if(k==='left'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+SLOTS-1)%SLOTS;
 if(k==='right'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+1)%SLOTS;
 if(k==='x')dropSelected();
-if(k==='up'&&NAV.held[k]&&NAV.held[k].first)sendEmote(0);
-if(k==='down'&&NAV.held[k]&&NAV.held[k].first)sendEmote(1);
 });
 }
 return;
@@ -2833,9 +2835,8 @@ if(e.target&&e.target.tagName==='INPUT')return;
 if(S.emoOpen&&S.mode==='game'){
 const dg=/^Digit([1-6])$/.exec(e.code);
 if(dg){e.preventDefault();sendEmote(parseInt(dg[1],10)-1);emoOpen(false);return}
-if(e.code==='Escape'||e.code==='KeyV'){e.preventDefault();emoOpen(false);return}
+if(e.code==='Escape'){e.preventDefault();emoOpen(false);return}
 }
-if(e.code==='KeyV'&&S.mode==='game'&&S.me&&!S.chatOpen){e.preventDefault();emoOpen(true);return}
 if(e.code==='Enter'&&(S.mode==='game'||S.mode==='lobby')){e.preventDefault();openChat();return}
 keys[e.code]=true;
 if(S.mode==='game'&&bound(e.code))e.preventDefault();

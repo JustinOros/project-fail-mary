@@ -136,7 +136,7 @@ From Level 3 on, some repair panels show a number badge. That is how many player
 
 ## Emotes
 
-Press V, or tap the smiley button at the top, to open the emote wheel, then click or tap an emote, or press 1 to 6. Everyone sees a bubble above you, and if you are off screen it shows at the screen edge pointing your way. On a controller, press Start to open the wheel, aim with the stick or D-pad, then press A to send or B to close. Outside the wheel, D-pad up sends Help here and D-pad down sends Got it. There is a short cooldown so nobody can spam.
+Open the emote wheel by pressing Start on a controller or by clicking or tapping the smiley button at the top. Nothing else opens it. Click or tap an emote, press 1 to 6, or on a controller aim with the stick or D-pad and press A to send (B or Start closes it). Everyone sees a bubble above you, and if you are off screen it shows at the screen edge pointing your way. There is a short cooldown so nobody can spam.
 
 ## Between levels
 
