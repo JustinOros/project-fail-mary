@@ -1,6 +1,6 @@
 # Project Fail Mary
 
-A zero gravity co-op and competitive ship repair game that runs in the browser. Float around a broken spaceship as a five legged crawler, grab walls, push off, repair the panels, then race your friends to finish the final reactor repair before the ship self destructs.
+A zero gravity co-op and competitive ship repair game that runs in the browser. Float around a broken spaceship as a five legged crawler, grab walls, push off, patch the soft spots, then bring the whole crew to the reactor before the ship self destructs.
 
 Play it: https://justinoros.github.io/project-fail-mary/
 
@@ -19,9 +19,9 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 ## How a round works
 
-- Repair every red panel in the ship. Panels repair faster the more players work on them together.
-- Each panel needs a wrench from every player repairing it, and the wrench is used up when the panel is fixed. Wrenches are made on the 3D printer (see below).
-- Once all panels are fixed, the reactor unlocks. Fly into the reactor ring and stay inside it. The first player to finish the final repair wins the round and gets the most points.
+- Patch every soft spot in the ship's walls. Each one shows a number: how many wrenches it uses up. Wrenches are made on the 3D printer (see below). Everyone standing in the circle counts together, and more players patch faster.
+- From Level 3 on, soft spots get worse over time (up to 3 wrenches). A spot at 3 that is ignored for 30 seconds bursts into a hull breach, then needs patching again.
+- Once every soft spot is patched, the reactor unlocks. Every active player must be inside the ring at the same time, each holding a wrench, for about 4 seconds. If someone leaves, the progress slowly drains. Each player's wrench is used up at the end. The player with the most points that round gets the round bonus.
 - A self destruct timer is running. If time runs out, the ship explodes and everyone loses.
 - After each round a scoreboard shows everyone's points until the host starts the next level.
 - There are 10 levels, and each one is bigger and nastier than the last.
@@ -31,8 +31,8 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 | Action | Points |
 | --- | --- |
 | Finish the final repair | 300 |
-| Finish a panel | 60 |
-| Help repair a panel | 40 |
+| Finish a soft spot | 60 |
+| Help patch a soft spot | 40 |
 | Collect a star | 20 |
 
 ## Moving around
@@ -59,7 +59,7 @@ You float in zero gravity, so momentum is everything.
 - Each round one player is the engineer and starts with the 3D printer, which they carry like any item. The engineer changes every round, and in a solo game it is always you. On Levels 1 and 2 the engineer also starts with one wrench.
 - Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, so gather it and bring it to the engineer or throw it to them.
 - The engineer presses E (Y on a controller or phone) to print. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
-- Wrenches can be dropped and passed to friends. Panels need them and hull breach patches use one up too.
+- Wrenches can be dropped and passed to friends. Soft spots, hull breach patches (2 wrenches) and the reactor (one per player) use them up.
 
 ## Colored doors and keycards
 
@@ -135,10 +135,6 @@ A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass
 
 On a phone, open the game link, then use Share and Add to Home Screen on iPhone, or the browser menu and Install app on Android. It launches full screen with no browser bars. The files manifest.webmanifest, icon-192.png, icon-512.png and apple-touch-icon.png must sit next to index.html.
 
-## Co-op panels
-
-From Level 3 on, some repair panels show a number badge. That is how many players must repair the panel at the same time. Levels 1 and 2 never need more than one player. The number never goes above the players actually in the round, so a small crew or a solo player can always finish. If anyone lets go, the repair resets.
-
 ## Emotes
 
 Open the emote wheel by pressing Start on a controller or by clicking or tapping the smiley button at the top. Nothing else opens it. Click or tap an emote, press 1 to 6, or on a controller aim with the stick or D-pad and press A to send (B or Start closes it). Everyone sees a bubble above you, and if you are off screen it shows at the screen edge pointing your way. There is a short cooldown so nobody can spam.
@@ -153,4 +149,4 @@ The lobby code appears at the top of the screen during a round. Any player can t
 
 ## Hull breach events
 
-From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Carry a wrench to the hole and stay next to it for about 3 seconds to patch it; more players patch faster, and one wrench is used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.
+From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Stay next to the hole holding 2 wrenches between you for about 3 seconds to patch it; more players patch faster, and both wrenches are used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.

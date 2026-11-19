@@ -448,7 +448,7 @@ if(free({x:x-30,y:y-30,w:60,h:60},10)){L.fuel.push({x,y});break}
 }
 }
 L.fil=[];
-const nfil=L.st.reduce((a,q)=>a+(q.need||1),0)+1+(n>=4?2:0);
+const nfil=L.st.length*3+11;
 for(let k=0;k<nfil;k++){
 for(let tries=0;tries<30;tries++){
 const room=L.rooms[Math.floor(rnd()*nr)];
@@ -545,10 +545,10 @@ if(d>=BR_PULL||d<1)return null;
 const f=1100*Math.pow(1-d/BR_PULL,1.6);
 return{ax:dx/d*f,ay:dy/d*f,d};
 }
-function brSpawn(){
+function brSpawn(at){
 const L=S.L;
-let best=null;
-for(let t=0;t<14;t++){
+let best=at?{x:at.x,y:at.y,rx:at.x,ry:L.h/2}:null;
+for(let t=0;t<14&&!best;t++){
 const room=L.rooms[Math.floor(Math.random()*L.rooms.length)];
 const top=Math.random()<0.5;
 const x=room.x0+90+Math.random()*Math.max(10,room.x1-room.x0-180),y=top?L.T+14:L.h-L.T-14;
@@ -561,7 +561,7 @@ emit({t:'brs',x:best.x,y:best.y,rx:best.rx,ry:best.ry,we:S.time+BR_WARN,dl:S.tim
 function brEnd(why,by){
 S.brNext=S.time+35+Math.random()*35;
 if(why==='timeout')S.time+=BR_PEN;
-if(why==='patched'&&by)useWrench(by);
+if(why==='patched'){const ids=[...S.players.values()].filter(p=>p.rep===-3&&!p.spec&&!p.out).map(p=>p.id);payWrenches(ids,2)}
 emit({t:'bre',why,by});
 }
 function handleEject(id){
@@ -588,14 +588,24 @@ if(p.id==='H'){S.cam.x=p.x;S.cam.y=p.y;toast('Back aboard','#7affc8')}
 else{const c=S.conns.get(p.id);if(c&&c.open)c.send({t:'spawn',x:p.rx,y:p.ry,fu:0.4})}
 });
 }
-function coopNeed(k,n){
+function coopNeed(k,n){return 1}
+function startDmg(k,n){
 if(n<3)return 1;
 if(n<6)return k%3===1?2:1;
-if(n<8)return k%3===0?1:2;
-return k%3===0?1:k%3===1?2:3;
+if(n<8)return 1+(k%2);
+return 1+(k%3);
+}
+function wrenchCount(id){let c=0;S.items.forEach(it=>{if(it.owner===id&&it.type==='tool')c++});return c}
+function wrenchesAt(r){let c=0;S.players.forEach(p=>{if(p.rep===r&&!p.spec&&!p.out)c+=wrenchCount(p.id)});return c}
+function payWrenches(ids,n){
+let left=n;
+for(const id of ids){
+while(left>0&&wrenchCount(id)>0){useWrench(id);left--}
+if(left<=0)break;
+}
 }
 function activeCount(){let c=0;S.players.forEach(p=>{if(!p.spec)c++});return Math.max(1,c)}
-function stNeed(i){const s=S.L&&S.L.st[i];return s?Math.min(s.need||1,activeCount()):1}
+function stNeed(i){return 1}
 function stCount(i){let c=0;S.players.forEach(p=>{if(p.rep===i&&!p.spec)c++});return c}
 function allDone(){return S.stDone.length>0&&S.stDone.every(Boolean)}
 
@@ -724,7 +734,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 tReset();S.emo={};S.br=null;S.brNext=lvl>=4?20+Math.random()*20:1e9;S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
+S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -934,7 +944,7 @@ if(can){
 let best=-1,bd=1e9;
 L.st.forEach((s,i)=>{if(S.stDone[i])return;const d=Math.hypot(me.x-s.x,me.y-s.y);if(d<s.r+RR&&d<bd){bd=d;best=i}});
 if(best>=0)me.rep=best;
-else if(brLive()&&Math.hypot(me.x-S.br.x,me.y-S.br.y)<S.br.r+RR&&holdsTool(S.myId))me.rep=-3;
+else if(brLive()&&Math.hypot(me.x-S.br.x,me.y-S.br.y)<S.br.r+RR)me.rep=-3;
 else if(allDone()&&Math.hypot(me.x-L.fin.x,me.y-L.fin.y)<L.fin.r+RR)me.rep=-2;
 }
 const prev=me.holdId===undefined?-1:me.holdId;
@@ -967,7 +977,6 @@ if(S.isHost)resetRepair(S.myId,i);else if(S.hostConn&&S.hostConn.open)S.hostConn
 function resetRepair(id,i){
 if(S.phase!=='play'||!S.L)return;
 if(i>=0&&i<S.L.st.length&&!S.stDone[i]){S.stProg[i]=0;S.contrib[i]={}}
-else if(i===-2)S.finProg[id]=0;
 else if(i>=1000&&i-1000<S.L.fuel.length&&!S.fTaken.has(i-1000))S.fProg[i-1000]=0;
 else return;
 emit({t:'rs',i,id});
@@ -1080,7 +1089,7 @@ target:()=>tutNearPanel()},
 text:()=>'You are the engineer. Collect filament, then '+(tc.on?'tap Y':S.tut.usePad?'press Y':'press '+tl('rep'))+' to print. Gray filament makes wrenches, colored filament makes keycards for matching doors.',
 target:()=>null},
 {id:'tool',max:11,ok:()=>!!tutTool(),fin:()=>false,
-text:()=>'You have a wrench. Stand in a red panel circle to repair it. The wrench is used up when the panel is fixed.',
+text:()=>'You have a wrench. Stand in a soft spot circle to patch it. The number on the spot is how many wrenches it uses up.',
 target:()=>null},
 {id:'throw',max:9,ok:()=>!!S.items.find(it=>it.owner===S.myId)&&!S.tut.f.threw&&S.tut.seen.tool,fin:()=>S.tut.f.threw,
 text:()=>'Tip: press '+tl('drop')+' to throw an item. It sends you the opposite way, which is a quick way to travel.',
@@ -1092,7 +1101,7 @@ target:()=>{const k=tutKey(),w=k&&S.L.walls.find(q=>q.door===k.meta&&!q.open);re
 text:()=>'Fly into stars for bonus points.',
 target:()=>tutNearStar()},
 {id:'final',max:30,urgent:true,ok:()=>allDone(),fin:()=>false,
-text:()=>'All panels fixed! Fly into the glowing reactor ring and stay inside it.',
+text:()=>'All soft spots patched! Everyone needs a wrench, then the whole crew flies into the glowing reactor ring.',
 target:()=>({x:S.L.fin.x,y:S.L.fin.y,r:S.L.fin.r,d:Math.hypot(S.me.x-S.L.fin.x,S.me.y-S.L.fin.y)})},
 {id:'hurry',max:7,urgent:true,ok:()=>S.L.limit-S.time<30&&!allDone(),fin:()=>false,
 text:()=>'Hurry! The ship self destructs in under 30 seconds.',
@@ -1180,18 +1189,37 @@ ctx.restore();
 txt('TIP',bx+14,by+9,11,'#ffd93d','left','900');
 lines.forEach((l,i)=>txt(l,vw/2,by+12+lh*(i+0.5)+4,size,'#ffffff','center','700'));
 }
+function hostSoft(){
+const L=S.L;
+if(L.n<3)return;
+S.dmg.forEach((d,i)=>{
+if(S.stDone[i]||S.time<S.dmgT[i])return;
+if(d<3){S.dmg[i]=d+1;S.dmgT[i]=S.time+(d+1>=3?30:40);emit({t:'dg',i,d:d+1})}
+else if(S.br){S.dmgT[i]=S.time+5}
+else{
+S.dmg[i]=1;S.dmgT[i]=S.time+60;S.stProg[i]=0;S.contrib[i]={};
+const q=L.st[i];
+emit({t:'dgb',i});
+brSpawn({x:q.x,y:q.top?L.T+14:L.h-L.T-14});
+}
+});
+}
 function stationDone(i,by){
 const ids=Object.keys(S.contrib[i]);
 ids.forEach(id=>{const p=S.players.get(id);if(p){const g=id===by?60:40;p.score+=g;p.rd+=g}});
-ids.forEach(id=>useWrench(id));
+payWrenches(ids,S.dmg[i]);
 emit({t:'sd',i,by,ids});
 }
 
+function ids0(){return [...S.players.values()].filter(p=>!p.spec)}
 function hostSpawnItems(){
 const L=S.L;
 const mk=(k,meta)=>S.items.push({uid:S.nextUid++,type:'fil',meta,owner:null,slot:-1,x:k.x,y:k.y,vx:0,vy:0,last:null,nt:0});
 L.keys.forEach(k=>mk(k,k.color));
-(L.fil||[]).forEach(k=>mk(k,-1));
+const pc=ids0().length;
+const dm0=L.st.reduce((a,q,k)=>a+startDmg(k,L.n),0);
+const want=dm0+(L.n>=3?L.st.length:0)+3+pc-(L.n<=2?1:0);
+(L.fil||[]).slice(0,want).forEach(k=>mk(k,-1));
 const ids=[...S.players.values()].filter(p=>!p.spec).map(p=>p.id);
 if(!ids.length)return;
 S.engSeq=(S.engSeq||0)+1;
@@ -1318,8 +1346,9 @@ emit({t:'boom',res,lvl:S.lvl});
 return;
 }
 hostPrints();
-const rc={};
-for(const p of S.players.values())if(p.rep>=0&&p.rep<1000&&!p.spec&&holdsTool(p.id))rc[p.rep]=(rc[p.rep]||0)+1;
+hostSoft();
+const wc={};
+for(const p of S.players.values())if(p.rep>=0&&p.rep<1000&&!p.spec&&!p.out)wc[p.rep]=(wc[p.rep]||0)+wrenchCount(p.id);
 for(const p of S.players.values()){
 if(p.rep>=1000){
 const fi=p.rep-1000;
@@ -1327,8 +1356,8 @@ if(!S.fTaken.has(fi)){
 S.fProg[fi]+=dt*p.rr/FUELT;
 if(S.fProg[fi]>=1){S.fProg[fi]=0;handleFuel(p.id,fi)}
 }
-}else if(p.rep>=0&&!S.stDone[p.rep]&&holdsTool(p.id)&&rc[p.rep]>=stNeed(p.rep)){
-S.stProg[p.rep]+=dt*p.rr/L.st[p.rep].t;
+}else if(p.rep>=0&&!S.stDone[p.rep]&&!p.out&&(wc[p.rep]||0)>=S.dmg[p.rep]){
+S.stProg[p.rep]+=dt*p.rr/(L.st[p.rep].t*(0.5+0.5*S.dmg[p.rep]));
 S.contrib[p.rep][p.id]=1;
 if(S.stProg[p.rep]>=1)stationDone(p.rep,p.id);
 }
@@ -1337,19 +1366,25 @@ if(S.br){
 if(S.time>=S.br.dl)brEnd('timeout');
 else if(S.time>=S.br.we){
 let sum=0,who=null;
-for(const p of S.players.values())if(p.rep===-3&&!p.spec&&!p.out&&holdsTool(p.id)){sum+=p.rr;who=p.id}
-if(sum>0)S.br.prog+=dt*sum/BR_PATCH;else S.br.prog=Math.max(0,S.br.prog-dt*0.5);
+let bw=0;
+for(const p of S.players.values())if(p.rep===-3&&!p.spec&&!p.out){bw+=wrenchCount(p.id);sum+=p.rr;who=p.id}
+if(sum>0&&bw>=2)S.br.prog+=dt*sum/BR_PATCH;else S.br.prog=Math.max(0,S.br.prog-dt*0.5);
 if(S.br.prog>=1)brEnd('patched',who);
 }
 }else if(S.time>=S.brNext&&S.time<L.limit-25)brSpawn();
 hostRespawns();
 const all=allDone();
-const ready=all&&toolStatus().missing.length===0;
-for(const p of S.players.values()){
-let v=S.finProg[p.id]||0;
-if(ready&&p.rep===-2)v+=dt*p.rr/L.fin.t;else v=Math.max(0,v-dt*1.2);
-S.finProg[p.id]=v;
-if(v>=1&&S.phase==='play'){roundWin(p.id);break}
+const act=[...S.players.values()].filter(p=>!p.spec&&!p.out);
+const inR=act.filter(p=>p.rep===-2);
+const armed=inR.filter(p=>wrenchCount(p.id)>0).length;
+let v=S.finProg.R||0;
+if(all&&act.length>0&&inR.length===act.length&&armed===act.length)v+=dt/L.fin.t;else v=Math.max(0,v-dt*0.25);
+S.finProg.R=v;
+if(v>=1&&S.phase==='play'){
+const ids=act.map(p=>p.id);
+ids.forEach(id=>useWrench(id));
+const top=act.slice().sort((a,b)=>b.rd-a.rd)[0];
+roundWin(top.id);
 }
 }
 
@@ -1360,7 +1395,7 @@ onMsg(m);
 function bcastState(){
 const ps=[];
 S.players.forEach(p=>ps.push([p.id,p.x,p.y,p.vx,p.vy,p.a,p.rep,p.rr,p.stun,p.ang,p.wa,p.th,p.score,p.rd,p.fuel,p.sel,p.spec?1:0,p.out?1:0]));
-const m={t:'ps',tm:S.time,bp:S.br?S.br.prog:0,ps,sp:S.stProg,fp:S.finProg,fg:S.fProg,it:S.items.map(i=>[i.uid,i.type,i.meta,i.owner||0,i.slot,i.x,i.y,i.vx,i.vy,i.got||0])};
+const m={t:'ps',tm:S.time,bp:S.br?S.br.prog:0,ps,sp:S.stProg,fp:S.finProg,dm:S.dmg,fg:S.fProg,it:S.items.map(i=>[i.uid,i.type,i.meta,i.owner||0,i.slot,i.x,i.y,i.vx,i.vy,i.got||0])};
 for(const c of S.conns.values())if(c.open)c.send(m);
 }
 function sendLobby(){emit({t:'lobby',ps:[...S.players.values()].map(p=>({id:p.id,name:p.name,color:p.color,sc:p.score,rdy:p.id==='H'||!!p.ready,sp:!!p.spec}))})}
@@ -1431,7 +1466,7 @@ p.tx=e[1];p.ty=e[2];p.vx=e[3];p.vy=e[4];p.a=e[5];p.rep=e[6];p.rr=e[7];p.stun=e[8
 if(!p.seen){p.x=p.tx;p.y=p.ty;p.seen=true}
 });
 if(S.br)S.br.prog=m.bp||0;
-S.stProg=m.sp;S.finProg=m.fp;S.fProg=m.fg;S.items=m.it.map(a=>({uid:a[0],type:a[1],meta:a[2],owner:a[3]||null,slot:a[4],x:a[5],y:a[6],vx:a[7],vy:a[8],got:a[9]||0}));
+S.stProg=m.sp;S.finProg=m.fp;if(m.dm)S.dmg=m.dm;S.fProg=m.fg;S.items=m.it.map(a=>({uid:a[0],type:a[1],meta:a[2],owner:a[3]||null,slot:a[4],x:a[5],y:a[6],vx:a[7],vy:a[8],got:a[9]||0}));
 if(Math.abs(m.tm-S.time)>0.5)S.time=m.tm;else S.time+=(m.tm-S.time)*0.2;
 }
 
@@ -1467,8 +1502,8 @@ case 'sd':{
 S.stDone[m.i]=true;S.stProg[m.i]=1;
 const s=S.L.st[m.i],p=S.players.get(m.by);
 burst(s.x,s.y,'#4cd964',30,320,0.9);sfx.done();S.shake=Math.max(S.shake,6);
-toast((p?p.name:'Someone')+' repaired panel '+(m.i+1)+'/'+S.L.st.length+' (wrench used up)','#7affc8');
-if(allDone())toast('FINAL REPAIR UNLOCKED! Everyone into the reactor ring','#c58bff');
+toast((p?p.name:'Someone')+' patched soft spot '+(m.i+1)+'/'+S.L.st.length,'#7affc8');
+if(allDone())toast('REACTOR UNLOCKED! Everyone into the ring, each holding a wrench','#c58bff');
 break}
 case 'pk':{
 S.taken.add(m.i);S.pending.delete(m.i);
@@ -1516,6 +1551,8 @@ toast((q?q.name:'Someone')+' unlocked the '+KEYNAME[m.k]+' door','#ffd93d');
 sfx.done();S.shake=Math.max(S.shake,6);
 }
 break}
+case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Soft spot '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn()}break}
+case 'dgb':{toast('Soft spot '+(m.i+1)+' burst open','#ff6b6b');break}
 case 'eng':{
 const p=S.players.get(m.id);
 toast(m.id===S.myId?'You are the engineer. Collect filament and print with '+(tc.on?'Y':lab(B.repair[0])):(p?p.name:'Someone')+' has the 3D printer','#ffd93d');
@@ -1532,7 +1569,7 @@ break}
 case 'brs':{
 S.br={x:m.x,y:m.y,rx:m.rx,ry:m.ry,we:m.we,dl:m.dl,prog:0,r:26};
 S.flash=0.5;S.shake=Math.max(S.shake,10);
-toast('HULL BREACH! Carry a tool next to the hole to patch it','#ff9f1a');
+toast('HULL BREACH! Stay at the hole holding 2 wrenches','#ff9f1a');
 [0,1,2,3].forEach(i=>tone(i%2?620:880,0.16,'square',0.07,1,i*0.18));
 break}
 case 'bre':{
@@ -2211,16 +2248,14 @@ if(!done&&pr>0){
 ctx.strokeStyle='#4cd964';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,s.r+12,-Math.PI/2,-Math.PI/2+6.283*pr);ctx.stroke();
 }
 if(!done){
-let c=0,sp=0;S.players.forEach(q=>{if(q.rep===i){c++;sp+=q.rr}});
-const nd=stNeed(i);
-if(nd>1){
-const ok=c>=nd;
-ctx.fillStyle=ok?'#1f6b3a':'#6b4a12';ctx.strokeStyle=ok?'#7affc8':'#ffd93d';ctx.lineWidth=2.5;
+const dm=(S.dmg&&S.dmg[i])||1;
+let c=0,sp=0,wc=0;S.players.forEach(q=>{if(q.rep===i&&!q.spec&&!q.out){c++;sp+=q.rr;wc+=wrenchCount(q.id)}});
+const bc=dm>=3?'#ff4d4d':dm===2?'#ff9f1a':'#ffd93d';
+ctx.fillStyle='#2a1a12';ctx.strokeStyle=bc;ctx.lineWidth=2.5;
 ctx.beginPath();ctx.arc(36,-24,15,0,6.3);ctx.fill();ctx.stroke();
-txt(String(nd),36,-23,18,'#fff','center','900');
-if(!ok)txt('NEEDS '+nd+' PLAYERS ('+c+'/'+nd+')',0,s.top?64:-64,14,'#ffd93d','center','900');
-}
-if(c>=2&&c>=nd)txt('x'+sp.toFixed(1)+' TEAMWORK',0,s.top?64:-64,15,'#7affc8','center','900');
+txt(String(dm),36,-23,18,'#fff','center','900');
+if(c>0&&wc<dm)txt('NEEDS '+dm+' WRENCH'+(dm>1?'ES':'')+' ('+wc+'/'+dm+')',0,s.top?64:-64,14,'#ffd93d','center','900');
+else if(c>=2)txt('x'+sp.toFixed(1)+' TEAMWORK',0,s.top?64:-64,15,'#7affc8','center','900');
 }
 ctx.restore();
 });
@@ -2235,11 +2270,8 @@ ctx.fillStyle='#1a2340';ctx.strokeStyle=open?'#c58bff':'#5a6488';ctx.lineWidth=4
 ctx.beginPath();ctx.roundRect(-58,-34,116,68,14);ctx.fill();ctx.stroke();
 ctx.font='34px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(open?'⚛️':'🔒',0,3);
 if(open){
-let idx=0;
-S.players.forEach(p=>{
-const v=S.finProg[p.id]||0;
-if(v>0){ctx.strokeStyle=COLORS[p.color];ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,f.r+10+idx*7,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,v));ctx.stroke();idx++}
-});
+const v=S.finProg.R||0;
+if(v>0){ctx.strokeStyle='#c58bff';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,f.r+12,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,v));ctx.stroke()}
 }
 ctx.restore();
 }
@@ -2362,7 +2394,8 @@ for(let i=0;i<4;i++){const a=t*5+i*1.57;ctx.beginPath();ctx.arc(0,0,b.r*0.55,a,a
 }
 if(b.prog>0){ctx.strokeStyle='#4cd964';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,b.r+10,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,b.prog));ctx.stroke()}
 const me=S.me,near=me&&Math.hypot(me.x-b.x,me.y-b.y)<b.r+RR+90;
-const lab=!live?'HULL BREACH INCOMING':near&&!holdsTool(S.myId)?'NEED A TOOL TO PATCH':near?'PATCHING':'HULL BREACH';
+const bwc=wrenchesAt(-3);
+const lab=!live?'HULL BREACH INCOMING':near&&bwc<2?'NEEDS 2 WRENCHES ('+bwc+'/2)':near?'PATCHING':'HULL BREACH';
 const ly=b.y<S.L.h/2?60:-60;
 txt(lab,0,ly,14,'#ffb347','center','900');
 ctx.restore();
@@ -2449,7 +2482,7 @@ function drawHud(L,sc){
 const me=S.me,t=S.time;
 txt('BLIP-A  LEVEL '+L.n+' / '+MAXL+'  '+L.name.toUpperCase(),16,22,18,'#fff','left','800');
 const done=S.stDone.filter(Boolean).length;
-txt(allDone()?'FINAL REPAIR: REACH THE REACTOR':'Panels repaired '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
+txt(allDone()?'REACTOR: EVERYONE IN THE RING WITH A WRENCH':'Soft spots patched '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
 if(S.phase==='won'||S.phase==='board')txt('SELF DESTRUCT HALTED',16,70,16,'#7affc8','left','900');
 if(t>=0&&S.phase==='play'){
 const rem=Math.max(0,L.limit-t),low=rem<=20;
@@ -2490,9 +2523,10 @@ txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
 if(t>=0&&S.phase==='play'&&S.me.rep>=0&&S.me.rep<1000&&!S.stDone[S.me.rep]&&!holdsTool(S.myId))txt('NEED A WRENCH: ask the engineer to print one',vw/2,vh*0.62,20,'#ff8a5c','center','900');
 if(allDone()&&t>=0&&S.phase==='play'){
-const ts=toolStatus();
-if(ts.missing.length)txt('TOOLS MISSING FROM REACTOR RING: '+ts.missing.join(', '),vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#ff8a5c','center','900');
-else txt('REACTOR READY. STAY IN THE RING',vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#7affc8','center','900');
+const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
+const ri=ra.filter(p=>p.rep===-2),rw=ri.filter(p=>wrenchCount(p.id)>0).length;
+const okr=ri.length===ra.length&&rw===ra.length;
+txt('WRENCHES IN RING '+rw+'/'+ra.length+'   PLAYERS IN RING '+ri.length+'/'+ra.length,vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,okr?'#7affc8':'#ff8a5c','center','900');
 }
 if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);
