@@ -936,6 +936,9 @@ function tDown(e){
 tc.on=true;
 if(S.mode!=='game'||!S.me||S.chatOpen||S.setOpen)return;
 const x=e.clientX,y=e.clientY;
+const ph=pmHit(x,y);
+if(ph){pmClick(ph);return}
+if(fuelBtnHit(x,y)){sendPrint('fuel',0);return}
 const hi=hotbarHit(x,y);
 if(hi>=0){S.me.sel=hi;return}
 const b=tHit(x,y);
@@ -988,7 +991,7 @@ txt(b.label,b.x,b.y-b.r*0.12,b.k==='give'?b.r*0.55:b.r*0.8,'#fff','center','900'
 txt(b.k==='grab'&&tc.lat?'LOCKED':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
 }else txt(b.label,b.x,b.y,b.r*1.0,'#fff','center','800');
 }
-if(vh>vw)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,'#ffd93d','center','700');
+if(vh>vw&&!S.pm)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,'#ffd93d','center','700');
 }
 
 function typing(){return S.chatOpen||!$('osk').classList.contains('hidden')}
@@ -1328,6 +1331,7 @@ repaired:{p:2,t:['All repair done. Amaze. Now get Astrophage.','Hull is stable. 
 door:{p:2,t:['Reactor door open. Bring Astrophage inside.','Door open. Thank for teamwork.','Reactor access granted. Be brave.']},
 power:{p:1,t:[a=>'Reactor eat Astrophage. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Amaze. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Good Astrophage. Reactor at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.']},
 revived:{p:2,t:['Friend is awake. Amaze.','You live again. Good good good.','Revive success. Thank.','Not dead anymore. Fist my bump.']},
+burn:{p:1,t:['Astrophage burned for fuel. We make more. Is okay.','Fuel from Astrophage. Costly. Still amaze.','Astrophage used. Be careful. Reactor still needs some.']},
 lost:{p:2,t:['Friend is in space. No can die. Retrieve friend.','Crew member lost. You are friend. Come back.','Someone left ship. Is not plan.']},
 win:{p:3,t:['Amaze. Amaze. Amaze.','Power restored. Fist my bump.','Ship fixed. Together we solve. Thank.']},
 boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boom. Is bad. Words of encouragement. Try again.','Blip-A is gone. Rocky sad. We try again.']}
@@ -1734,15 +1738,138 @@ if(!p||p.spec||p.out||!f||!pr){delete S.pr[id];emit({t:'prx',id});continue}
 if(S.time<q.end)continue;
 delete S.pr[id];
 S.items=S.items.filter(it=>it!==f);
+if(f.type==='astro'){emit({t:'prd',id,k:-9});continue}
 if(f.meta<0)giveItem(id,'tool',0);else giveItem(id,'key',f.meta);
 emit({t:'prd',id,k:f.meta});
 }
 }
 function doPrint(){
-if(S.mode!=='game'||!S.me||S.phase!=='play'||S.time<0||S.chatOpen)return;
+if(S.mode!=='game'||!S.me||S.phase!=='play'||S.time<0||S.chatOpen||S.me.spec||S.me.out||S.me.dead)return;
+if(S.pm){pmOpen(false);return}
+pmOpen(true);
+}
+function handlePrintR(id,r,m){
+const p=S.players.get(id);
+if(!p||p.spec||p.out||p.dead||S.pr[id]||!hasPrinter(id))return;
+let f=null;
+if(r==='wrench')f=S.items.find(it=>it.owner===id&&it.type==='fil'&&it.meta<0);
+else if(r==='key')f=S.items.find(it=>it.owner===id&&it.type==='fil'&&it.meta===m);
+else if(r==='fuel'&&(p.fuel===undefined||p.fuel<0.95))f=S.items.find(it=>it.owner===id&&it.type==='astro');
+if(!f)return;
+S.pr[id]={end:S.time+2,uid:f.uid};
+emit({t:'prs',id,end:S.time+2});
+}
+function nearDoorOf(k){
+const me=S.me;
+return S.L.walls.some(w=>{
+if(w.door!==k||w.open)return false;
+const cx=Math.max(w.x,Math.min(me.x,w.x+w.w)),cy=Math.max(w.y,Math.min(me.y,w.y+w.h));
+return Math.hypot(me.x-cx,me.y-cy)<R+90;
+});
+}
+function printRows(){
+const id=S.myId,me=S.me;
+const mine=S.items.filter(i=>i.owner===id);
+const gray=mine.filter(i=>i.type==='fil'&&i.meta<0).length;
+const astro=mine.filter(i=>i.type==='astro').length;
+const rows=[];
+const atPanel=(me.rep>=0&&me.rep<1000&&!S.stDone[me.rep])||me.rep===-3;
+rows.push({k:'wrench',m:0,icon:'🔧',name:'Wrench',cost:'1 gray filament',ok:gray>0,why:'Need 1 gray filament',col:'#ffd93d',pr:atPanel?3:1});
+const cols=[];
+KEYNAME.forEach((n,i)=>{if(mine.some(it=>it.type==='fil'&&it.meta===i))cols.push(i)});
+cols.forEach(i=>rows.push({k:'key',m:i,icon:'💳',name:KEYNAME[i]+' keycard',cost:'1 '+KEYNAME[i].toLowerCase()+' filament',ok:true,why:'',col:KEYCOL[i],pr:nearDoorOf(i)?3:1}));
+if(!cols.length)rows.push({k:'key',m:-1,icon:'💳',name:'Keycard',cost:'1 colored filament',ok:false,why:'Need colored filament',col:'#8a91ab',pr:0});
+const full=me.fuel>=0.95;
+rows.push({k:'fuel',m:0,icon:'⛽',name:'Fuel tank',cost:'1 Astrophage, full refill',ok:astro>0&&!full,why:astro<1?'Need 1 Astrophage':'Tank is already full',col:'#4da3ff',pr:me.fuel<0.25?4:1});
+rows.forEach((r,i)=>{r.i0=i});
+rows.sort((a,b)=>b.pr-a.pr||(b.ok?1:0)-(a.ok?1:0)||a.i0-b.i0);
+return rows.slice(0,4);
+}
+function pmGeom(){
+const rows=printRows(),hb=hotbarGeom();
+const rh=tc.on&&vh<=vw?42:tc.on?50:46,hh=36,w=Math.min(vw-16,tc.on?320:350);
+const h=hh+rows.length*rh+8;
+const cxm=tc.on&&vh<=vw?Math.max(w/2+8,tGeom().right/2):vw/2;
+const lim=tc.on&&vh>vw?Math.min(hb.y-30,Math.min(...tGeom().btns.map(b=>b.y-b.r))-10):hb.y-30;
+const x=Math.max(8,Math.min(vw-w-8,cxm-w/2)),y=Math.max(8,lim-h);
+return{rows,rh,hh,w,h,x,y};
+}
+function pmHit(x,y){
+if(!S.pm)return null;
+const g=pmGeom();
+if(x<g.x||x>g.x+g.w||y<g.y||y>g.y+g.h)return null;
+if(y<g.y+g.hh)return x>g.x+g.w-52?{close:true}:{panel:true};
+const i=Math.floor((y-g.y-g.hh)/g.rh);
+return i>=0&&i<g.rows.length?{row:i}:{panel:true};
+}
+function pmOpen(o){
+if(o){
 if(!hasPrinter(S.myId)){toast('You need your own 3D printer to print','#ff8a5c');return}
-if(!S.items.some(it=>it.owner===S.myId&&it.type==='fil')){toast('No filament. Collect some first','#ff8a5c');return}
-if(S.isHost)handlePrint(S.myId);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'print'});
+S.pm=true;
+const rows=printRows();
+S.pmSel=Math.max(0,rows.findIndex(r=>r.ok));
+}else S.pm=false;
+}
+function sendPrint(r,m){
+if(S.isHost)handlePrintR(S.myId,r,m);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'print',r,m});
+}
+function pmChoose(i){
+const r=printRows()[i];
+if(!r)return;
+if(!r.ok){toast(r.why,'#ff8a5c');sfx.bump();return}
+sendPrint(r.k,r.m);
+S.pm=false;
+}
+function pmClick(h){
+if(h.close)pmOpen(false);
+else if(h.row!==undefined)pmChoose(h.row);
+}
+function fuelBtn(){
+const me=S.me;
+if(!me||me.spec||me.out||me.dead||S.pm||S.phase!=='play'||S.time<0||me.fuel>=0.25||S.pr[S.myId])return null;
+if(!hasPrinter(S.myId)||!S.items.some(it=>it.owner===S.myId&&it.type==='astro'))return null;
+const hb=hotbarGeom(),w=Math.min(vw-16,tc.on?290:330),h=tc.on?44:38;
+const cxm=tc.on&&vh<=vw?Math.max(w/2+8,tGeom().right/2):vw/2;
+const lim=tc.on&&vh>vw?Math.min(hb.y-34,Math.min(...tGeom().btns.map(b=>b.y-b.r))-10):hb.y-34;
+return{x:Math.max(8,Math.min(vw-w-8,cxm-w/2)),y:lim-h,w,h};
+}
+function fuelBtnHit(x,y){
+const b=fuelBtn();
+return !!b&&x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h;
+}
+function drawPrintMenu(){
+const me=S.me;
+if(S.pm&&(!me||S.phase!=='play'||me.spec||me.out||me.dead||!hasPrinter(S.myId)))S.pm=false;
+const fb=fuelBtn();
+if(fb){
+const pu=0.75+0.25*Math.sin(performance.now()/180);
+ctx.save();
+ctx.fillStyle='rgba(10,24,52,.92)';ctx.strokeStyle='rgba(77,163,255,'+pu+')';ctx.lineWidth=3;
+ctx.beginPath();ctx.roundRect(fb.x,fb.y,fb.w,fb.h,12);ctx.fill();ctx.stroke();
+txt(tc.on?'LOW FUEL: TAP TO BURN 1 ✨':'LOW FUEL: CLICK TO BURN 1 ✨',fb.x+fb.w/2,fb.y+fb.h/2+1,tc.on?16:15,'#9fd0ff','center','900');
+ctx.restore();
+}
+if(!S.pm)return;
+const g=pmGeom();
+ctx.save();
+ctx.fillStyle='rgba(8,12,24,.94)';ctx.strokeStyle='#ffd93d';ctx.lineWidth=2.5;
+ctx.beginPath();ctx.roundRect(g.x,g.y,g.w,g.h,14);ctx.fill();ctx.stroke();
+txt('3D PRINTER',g.x+14,g.y+g.hh/2,16,'#ffd93d','left','900');
+ctx.fillStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.roundRect(g.x+g.w-46,g.y+5,38,g.hh-10,8);ctx.fill();
+txt('✕',g.x+g.w-27,g.y+g.hh/2+1,18,'#cfd8ff','center','900');
+g.rows.forEach((r,i)=>{
+const ry=g.y+g.hh+i*g.rh,sel=(S.pmSel===i&&!tc.on);
+ctx.globalAlpha=r.ok?1:0.45;
+ctx.fillStyle=sel?'rgba(60,80,140,.95)':'rgba(26,35,64,.95)';
+ctx.beginPath();ctx.roundRect(g.x+6,ry+2,g.w-12,g.rh-4,10);ctx.fill();
+if(r.ok){ctx.strokeStyle=r.col;ctx.lineWidth=sel?3:1.5;ctx.stroke()}
+ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(r.icon,g.x+28,ry+g.rh/2+1);
+txt(r.name,g.x+50,ry+g.rh*0.36,16,'#fff','left','800');
+txt(r.ok?r.cost:r.why,g.x+50,ry+g.rh*0.74,12,r.ok?'#aab4d8':'#ff9a7a','left','700');
+if(!tc.on)txt(String(i+1),g.x+g.w-20,ry+g.rh/2,15,'#8a95c0','center','900');
+ctx.globalAlpha=1;
+});
+ctx.restore();
 }
 function giveItem(id,type,meta){
 const p=S.players.get(id);if(!p)return;
@@ -2082,6 +2209,12 @@ case 'prs':{S.prs[m.id]=m.end;sfx.whirr();break}
 case 'prx':{delete S.prs[m.id];break}
 case 'prd':{
 delete S.prs[m.id];
+if(m.k===-9){
+const q=S.players.get(m.id);
+if(m.id===S.myId){S.me.fuel=1;sfx.ding();toast('Fuel tank refilled','#4da3ff')}
+else toast((q?q.name:'Someone')+' burned an Astrophage for fuel','#ffe45c');
+shipSay('burn');
+break}
 if(m.id===S.myId){sfx.ding();S.tut.f.printed=true;toast(m.k<0?'Printed a wrench':'Printed a '+KEYNAME[m.k]+' keycard','#7affc8')}
 break}
 case 'tk':{
@@ -2222,7 +2355,7 @@ if(S.phase==='play')handleDrop(id,m.slot|0,+m.dx||0,+m.dy||0);
 }else if(m.t==='take'){
 if(S.phase==='play')handleTake(id,m.uid);
 }else if(m.t==='print'){
-if(S.phase==='play')handlePrint(id);
+if(S.phase==='play'){if(m.r)handlePrintR(id,String(m.r),m.m|0);else handlePrint(id)}
 }else if(m.t==='unlock'){
 if(S.phase==='play')handleUnlock(id,m.k|0);
 }else if(m.t==='lost'){
@@ -3245,7 +3378,7 @@ txt('SUCKED INTO SPACE',vw/2,vh/2-14,30,'#ff6b6b','center','900');
 txt('Respawning at the nearest airlock...',vw/2,vh/2+22,16,'#cfd8ff','center','700');
 }
 if(me.spec){const tg=specTarget();txt('WATCHING'+(tg?': '+tg.name:''),vw/2,110,18,'#cfd8ff','center','800')}
-else{drawArrows(L,sc);drawHotbar();drawTut(L,sc)}
+else{drawArrows(L,sc);drawHotbar();drawTut(L,sc);drawPrintMenu()}
 if(t<0){
 const c=Math.ceil(-t);
 txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
@@ -3591,6 +3724,15 @@ NAV.layer=null;
 if(fire.includes('select')&&S.mode==='game'&&!S.chatOpen)oskOpen($('chatIn'));
 if(S.mode==='game'&&S.me&&S.phase!=='board'){
 fire.forEach(k=>{
+if(S.pm){
+const n=printRows().length;
+if(k==='up')S.pmSel=((S.pmSel||0)+n-1)%n;
+else if(k==='down')S.pmSel=((S.pmSel||0)+1)%n;
+else if(k==='a')pmChoose(S.pmSel||0);
+else if(k==='b')pmOpen(false);
+else if(k==='y')doPrint();
+return;
+}
 if(k==='left'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+SLOTS-1)%SLOTS;
 if(k==='right'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+1)%SLOTS;
 if(k==='x')dropSelected();
@@ -3787,6 +3929,10 @@ if(e.code==='KeyQ'||e.code==='ArrowLeft')S.specIdx=(S.specIdx||0)-1;
 }
 if(S.mode==='game'&&S.me){
 const dg=/^Digit([1-9])$/.exec(e.code);
+if(S.pm){
+if(e.code==='Escape'){S.pm=false;return}
+if(dg&&parseInt(dg[1],10)<=4){pmChoose(parseInt(dg[1],10)-1);return}
+}
 if(dg)S.me.sel=parseInt(dg[1],10)-1;
 if(B.drop.includes(e.code))dropSelected();
 if(B.repair.includes(e.code)&&!e.repeat)doPrint();
@@ -3808,6 +3954,9 @@ return;
 }
 if(tc.on){tc.on=false;tReset()}
 if(S.mode==='game'&&S.me){
+const ph=pmHit(e.clientX,e.clientY);
+if(ph){pmClick(ph);return}
+if(e.button===0&&fuelBtnHit(e.clientX,e.clientY)){sendPrint('fuel',0);return}
 const hi=hotbarHit(e.clientX,e.clientY);
 if(hi>=0){S.me.sel=hi;if(e.button===2)dropSelected();return}
 }
