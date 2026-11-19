@@ -38,10 +38,9 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 | Action | Points |
 | --- | --- |
-| Finish the final repair | 300 |
+| Power the reactor | 300 |
 | Finish a damaged area | 60 |
 | Help patch a damaged area | 40 |
-| Collect a star | 20 |
 
 ## Moving around
 

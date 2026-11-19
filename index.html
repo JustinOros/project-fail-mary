@@ -452,7 +452,7 @@ o.slick=n>=4&&rnd()<Math.min(0.5,(n-3)*0.09);
 L.walls.push(o);break;
 }
 }
-const np=Math.min(13,3+n);
+const np=0;
 for(let k=0;k<np;k++){
 for(let tries=0;tries<30;tries++){
 const room=L.rooms[Math.floor(rnd()*nr)];
@@ -1200,9 +1200,6 @@ target:()=>null},
 {id:'key',max:16,ok:()=>!!tutKey()&&!!S.L.walls.find(w=>w.door===tutKey().meta&&!w.open),fin:()=>!tutKey(),
 text:()=>'You have a '+KEYNAME[tutKey().meta]+' keycard. Touch the '+KEYNAME[tutKey().meta]+' door to open it.',
 target:()=>{const k=tutKey(),w=k&&S.L.walls.find(q=>q.door===k.meta&&!q.open);return w?{x:w.x+w.w/2,y:w.y+w.h/2,r:30,d:Math.hypot(S.me.x-(w.x+w.w/2),S.me.y-(w.y+w.h/2))}:null}},
-{id:'star',max:8,ok:()=>S.tut.f.launched&&!!tutNearStar()&&tutNearStar().d<500,fin:()=>S.taken.size>0,
-text:()=>'Fly into stars for bonus points.',
-target:()=>tutNearStar()},
 {id:'final',max:30,urgent:true,ok:()=>allDone(),fin:()=>false,
 text:()=>'All damaged areas patched! Collect drifting Astrophage, then the whole crew holds their colored switches to open the reactor door. Carry the Astrophage inside to power it.',
 target:()=>{const d=S.L.rd.doorW,tx=d.x+d.w/2,ty=d.y+d.h/2;return{x:tx,y:ty,r:40,d:Math.hypot(S.me.x-tx,S.me.y-ty)}}},
