@@ -56,9 +56,9 @@ You float in zero gravity, so momentum is everything.
 
 ## 3D printer, filament and keycards
 
-- Each round one player is the engineer and starts with the 3D printer, which they carry like any item. The engineer changes every round, and in a solo game it is always you. On Levels 1 and 2 the engineer also starts with one wrench.
-- Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, so gather it and bring it to the engineer or throw it to them.
-- The engineer presses E (Y on a controller or phone) to print. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
+- Every player has their own 3D printer, which they carry like any item. It is heavy, and it only works for its owner, so another player who picks it up cannot print with it. On Levels 1 and 2 everyone also starts with one wrench.
+- Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, and you can throw it to a friend who needs it.
+- Press E (Y on a controller or phone) to print. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
 - Wrenches can be dropped and passed to friends. Soft spots, hull breach patches (2 wrenches) and the reactor (one per player) use them up.
 
 ## Colored doors and keycards

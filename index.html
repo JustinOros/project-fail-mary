@@ -448,7 +448,7 @@ if(free({x:x-30,y:y-30,w:60,h:60},10)){L.fuel.push({x,y});break}
 }
 }
 L.fil=[];
-const nfil=L.st.length*3+11;
+const nfil=L.st.length*3+13;
 for(let k=0;k<nfil;k++){
 for(let tries=0;tries<30;tries++){
 const room=L.rooms[Math.floor(rnd()*nr)];
@@ -1085,8 +1085,8 @@ target:()=>tutNearPanel()},
 {id:'repair',max:18,ok:()=>!!tutInRing()&&!allDone(),fin:()=>S.stDone.some(Boolean),
 text:()=>'Stay inside the circle until the bar fills. It repairs by itself. More friends in the circle makes it faster.',
 target:()=>tutNearPanel()},
-{id:'printer',max:16,ok:()=>S.items.some(it=>it.owner===S.myId&&it.type==='printer')&&!S.tut.f.printed&&S.time>2,fin:()=>S.tut.f.printed,
-text:()=>'You are the engineer. Collect filament, then '+(tc.on?'tap Y':S.tut.usePad?'press Y':'press '+tl('rep'))+' to print. Gray filament makes wrenches, colored filament makes keycards for matching doors.',
+{id:'printer',max:16,ok:()=>hasPrinter(S.myId)&&!S.tut.f.printed&&S.time>2,fin:()=>S.tut.f.printed,
+text:()=>'This is your 3D printer. Collect filament, then '+(tc.on?'tap Y':S.tut.usePad?'press Y':'press '+tl('rep'))+' to print. Gray filament makes wrenches, colored filament makes keycards for matching doors.',
 target:()=>null},
 {id:'tool',max:11,ok:()=>!!tutTool(),fin:()=>false,
 text:()=>'You have a wrench. Stand in a soft spot circle to patch it. The number on the spot is how many wrenches it uses up.',
@@ -1218,17 +1218,15 @@ const mk=(k,meta)=>S.items.push({uid:S.nextUid++,type:'fil',meta,owner:null,slot
 L.keys.forEach(k=>mk(k,k.color));
 const pc=ids0().length;
 const dm0=L.st.reduce((a,q,k)=>a+startDmg(k,L.n),0);
-const want=dm0+(L.n>=3?L.st.length:0)+3+pc-(L.n<=2?1:0);
+const want=dm0+(L.n>=3?L.st.length:0)+3+(L.n<=2?0:pc);
 (L.fil||[]).slice(0,want).forEach(k=>mk(k,-1));
-const ids=[...S.players.values()].filter(p=>!p.spec).map(p=>p.id);
-if(!ids.length)return;
-S.engSeq=(S.engSeq||0)+1;
-const id=ids.length===1?ids[0]:ids[S.engSeq%ids.length];
-S.engineer=id;
-giveItem(id,'printer',0);
-if(L.n<=2)giveItem(id,'tool',0);
-emit({t:'eng',id});
+ids0().forEach(p=>{
+giveItem(p.id,'printer',p.id);
+if(L.n<=2)giveItem(p.id,'tool',0);
+});
+emit({t:'eng'});
 }
+function hasPrinter(id){return S.items.some(it=>it.type==='printer'&&it.meta===id&&it.owner===id)}
 function useWrench(id){
 const w=S.items.find(it=>it.owner===id&&it.type==='tool');
 if(w)S.items=S.items.filter(it=>it!==w);
@@ -1236,7 +1234,7 @@ if(w)S.items=S.items.filter(it=>it!==w);
 function handlePrint(id){
 const p=S.players.get(id);
 if(!p||p.spec||p.out||S.pr[id])return;
-if(!S.items.some(it=>it.owner===id&&it.type==='printer'))return;
+if(!hasPrinter(id))return;
 const mine=S.items.filter(it=>it.owner===id&&it.type==='fil');
 if(!mine.length)return;
 const sel=invItem(id,p.sel);
@@ -1248,7 +1246,7 @@ function hostPrints(){
 for(const id in S.pr){
 const q=S.pr[id],p=S.players.get(id);
 const f=S.items.find(it=>it.uid===q.uid&&it.owner===id);
-const pr=S.items.find(it=>it.owner===id&&it.type==='printer');
+const pr=hasPrinter(id);
 if(!p||p.spec||p.out||!f||!pr){delete S.pr[id];emit({t:'prx',id});continue}
 if(S.time<q.end)continue;
 delete S.pr[id];
@@ -1259,7 +1257,7 @@ emit({t:'prd',id,k:f.meta});
 }
 function doPrint(){
 if(S.mode!=='game'||!S.me||S.phase!=='play'||S.time<0||S.chatOpen)return;
-if(!S.items.some(it=>it.owner===S.myId&&it.type==='printer')){toast('Only the engineer with the 3D printer can print','#ff8a5c');return}
+if(!hasPrinter(S.myId)){toast('You need your own 3D printer to print','#ff8a5c');return}
 if(!S.items.some(it=>it.owner===S.myId&&it.type==='fil')){toast('No filament. Collect some first','#ff8a5c');return}
 if(S.isHost)handlePrint(S.myId);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'print'});
 }
@@ -1555,7 +1553,7 @@ case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Soft spot '+(m.i+1)+' is about to bu
 case 'dgb':{toast('Soft spot '+(m.i+1)+' burst open','#ff6b6b');break}
 case 'eng':{
 const p=S.players.get(m.id);
-toast(m.id===S.myId?'You are the engineer. Collect filament and print with '+(tc.on?'Y':lab(B.repair[0])):(p?p.name:'Someone')+' has the 3D printer','#ffd93d');
+toast('You have a 3D printer. Collect filament and print with '+(tc.on?'Y':lab(B.repair[0])),'#ffd93d');
 break}
 case 'prs':{S.prs[m.id]=m.end;tone(520,0.2,'sawtooth',0.05,0.6);break}
 case 'prx':{delete S.prs[m.id];break}
@@ -1671,6 +1669,7 @@ const jp=S.players.get(id);
 if(jp&&jp.spec&&S.mode==='game'&&S.phase==='play'&&S.L){
 const sp=S.L.spawn[Math.floor(Math.random()*S.L.spawn.length)];
 jp.spec=false;jp.x=jp.tx=sp.x;jp.y=jp.ty=sp.y;jp.vx=jp.vy=0;jp.fuel=1;jp.att=null;jp.stun=0;jp.rep=-1;
+if(!hasPrinter(id)&&freeSlot(id)>=0)giveItem(id,'printer',id);
 conn.send({t:'spawn',x:sp.x,y:sp.y});
 sendLobby();
 }
@@ -2521,7 +2520,7 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
-if(t>=0&&S.phase==='play'&&S.me.rep>=0&&S.me.rep<1000&&!S.stDone[S.me.rep]&&!holdsTool(S.myId))txt('NEED A WRENCH: ask the engineer to print one',vw/2,vh*0.62,20,'#ff8a5c','center','900');
+if(t>=0&&S.phase==='play'&&S.me.rep>=0&&S.me.rep<1000&&!S.stDone[S.me.rep]&&!holdsTool(S.myId))txt('NEED A WRENCH: print one on your 3D printer',vw/2,vh*0.62,20,'#ff8a5c','center','900');
 if(allDone()&&t>=0&&S.phase==='play'){
 const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
 const ri=ra.filter(p=>p.rep===-2),rw=ri.filter(p=>wrenchCount(p.id)>0).length;
