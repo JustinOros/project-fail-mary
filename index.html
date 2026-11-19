@@ -1838,12 +1838,44 @@ peer.on('error',e=>{
 if(e.type==='unavailable-id'&&tries<5){try{peer.destroy()}catch(x){}openPeerHost(tries+1)}
 else{clearTimeout(oto);if(S.mode==='menu'&&S.peer===peer){try{peer.destroy()}catch(x){}offlineLobby()}else leave('Could not create lobby ('+e.type+')')}
 });
+attachHost(peer,code);
+}
+function attachHost(peer,code){
 peer.on('connection',conn=>{
 conn.on('data',m=>hostRecv(conn,m));
 conn.on('close',()=>hostDrop(conn.peer));
 conn.on('error',()=>hostDrop(conn.peer));
 });
+peer.on('disconnected',()=>hostReconnect(peer));
+peer.on('close',()=>{if(S.peer===peer&&S.code===code&&S.isHost)reviveHost(code,0)});
 }
+function hostReconnect(peer){
+if(S.peer!==peer||peer.destroyed||!peer.disconnected)return;
+try{peer.reconnect()}catch(e){}
+setTimeout(()=>hostReconnect(peer),4000);
+}
+function reviveHost(code,tries){
+if(!S.isHost||S.code!==code||tries>20)return;
+const peer=new Peer(PREFIX+code,PEEROPT);
+S.peer=peer;
+peer.on('error',e=>{
+if(S.peer!==peer)return;
+if(e.type==='unavailable-id'||e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed'){
+S.peer=null;
+try{peer.destroy()}catch(x){}
+setTimeout(()=>reviveHost(code,tries+1),3000);
+}
+});
+attachHost(peer,code);
+}
+setInterval(()=>{
+const pr=S.peer;
+if(S.isHost&&pr&&!pr.destroyed&&pr.disconnected)hostReconnect(pr);
+},5000);
+document.addEventListener('visibilitychange',()=>{
+const pr=S.peer;
+if(!document.hidden&&S.isHost&&pr&&!pr.destroyed&&pr.disconnected)hostReconnect(pr);
+});
 function clientId(){
 let v='';
 try{v=localStorage.getItem('zg-cid')||''}catch(e){}

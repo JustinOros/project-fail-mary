@@ -15,6 +15,8 @@ No install, no server, no account. It is a single `index.html` file.
 
 Press **Start** right away to play alone, or wait for friends to join first. To join a friend, click **Join**, type their 4 letter lobby code, and click **Join** again, or **Back** to return.
 
+The host's lobby stays open while you wait. If the connection to the matchmaking server drops, the game reconnects by itself and keeps the same lobby code, so you do not need to make a new lobby.
+
 Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join, a strict network or firewall may be blocking direct connections. Try a different network or a phone hotspot.
 
 ## How a round works
