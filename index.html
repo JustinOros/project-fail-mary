@@ -1784,9 +1784,24 @@ if(S.mode!=='game'||!S.me||S.phase!=='play'||S.time<0||S.chatOpen||S.me.spec||S.
 if(S.pm){pmOpen(false);return}
 pmOpen(true);
 }
+function recycleOf(it){
+if(!it)return null;
+if(it.type==='tool')return{meta:-1,n:1};
+if(it.type==='key')return{meta:it.meta,n:1};
+if(it.type==='flash'||it.type==='boots'||it.type==='magnet')return{meta:-1,n:2};
+return null;
+}
 function handlePrintR(id,r,m){
 const p=S.players.get(id);
 if(!p||p.spec||p.out||p.dead||S.pr[id]||!hasPrinter(id))return;
+if(r==='recycle'){
+const it=invItem(id,m),rc=recycleOf(it);
+if(!rc)return;
+S.items=S.items.filter(q=>q!==it);
+for(let i=0;i<rc.n;i++)giveItem(id,'fil',rc.meta);
+emit({t:'prd',id,k:-30,rc:it.type,n:rc.n,fm:rc.meta});
+return;
+}
 let f=null;
 if(r==='wrench')f=S.items.find(it=>it.owner===id&&it.type==='fil'&&it.meta<0);
 else if(r==='key')f=S.items.find(it=>it.owner===id&&it.type==='fil'&&it.meta===m);
@@ -1828,10 +1843,15 @@ const haveF=hasItemType(id,'flash'),haveB=hasItemType(id,'boots'),haveM=hasItemT
 rows.push({k:'flash',m:0,icon:'🔦',name:'Flashlight',cost:'2 gray filament, pulls Astrophage',ok:gray>=2&&!haveF,why:haveF?'You already have one':'Need 2 gray filament',col:'#ffe9a0',pr:S.L.dark>0?3:1});
 rows.push({k:'boots',m:0,icon:'🥾',name:'Gravity boots',cost:'2 gray filament, walk on walls',ok:gray>=2&&!haveB,why:haveB?'You already have them':'Need 2 gray filament',col:'#7affc8',pr:1});
 rows.push({k:'magnet',m:0,icon:'🧲',name:'Magnet',cost:'2 gray filament, pulls filament and fuel',ok:gray>=2&&!haveM,why:haveM?'You already have one':'Need 2 gray filament',col:'#ff9a9a',pr:1});
+{
+const sit=me.sel>=0?invItem(id,me.sel):null,rc=recycleOf(sit);
+if(rc)rows.push({k:'recycle',m:me.sel,icon:'♻️',name:'Recycle '+itemName(sit),cost:'Returns '+rc.n+' '+(rc.meta>=0?KEYNAME[rc.meta].toLowerCase():'gray')+' filament',ok:true,why:'',col:'#9fd8a8',pr:0.5});
+else rows.push({k:'recycle',m:-1,icon:'♻️',name:'Recycle',cost:'Select a printed item first',ok:false,why:'Select a printed item first',col:'#8a91ab',pr:0});
+}
 rows.push({k:'fuel',m:0,icon:'⛽',name:'Fuel tank',cost:'1 Astrophage, full refill',ok:astro>0&&!full,why:astro<1?'Need 1 Astrophage':'Tank is already full',col:'#4da3ff',pr:me.fuel<0.25?4:1});
 rows.forEach((r,i)=>{r.i0=i});
 rows.sort((a,b)=>b.pr-a.pr||(b.ok?1:0)-(a.ok?1:0)||a.i0-b.i0);
-return rows.slice(0,8);
+return rows.slice(0,9);
 }
 function pmGeom(){
 const rows=printRows(),hb=hotbarGeom();
@@ -2294,6 +2314,9 @@ const q=S.players.get(m.id);
 if(m.id===S.myId){S.me.fuel=1;sfx.ding();toast('Fuel tank refilled','#4da3ff')}
 else toast((q?q.name:'Someone')+' burned an Astrophage for fuel','#ffe45c');
 shipSay('burn');
+break}
+if(m.rc){
+if(m.id===S.myId){sfx.ding();toast('Recycled into '+m.n+' '+(m.fm>=0?KEYNAME[m.fm].toLowerCase():'gray')+' filament','#7affc8')}
 break}
 if(m.mk){
 if(m.id===S.myId){sfx.ding();toast(m.mk==='flash'?'Printed a Flashlight. It switches on by itself when Astrophage is nearby':m.mk==='magnet'?'Printed a Magnet. It pulls filament and fuel boxes while you carry it. Drop it to turn it off':'Printed Gravity Boots. They work while you carry them. Drop them to take them off','#7affc8');S.autoSel=m.mk==='flash'?m.mk:S.autoSel;S.autoSelT=S.time+5}
@@ -4043,7 +4066,7 @@ if(S.rebind){e.preventDefault();finishRebind(e.code);return}
 if(S.setOpen){if(e.code==='Escape')setOpen(false);return}
 if(e.target&&e.target.tagName==='INPUT')return;
 if(S.emoOpen&&S.mode==='game'){
-const dg=/^Digit([1-8])$/.exec(e.code);
+const dg=/^Digit([1-9])$/.exec(e.code);
 if(dg){e.preventDefault();sendEmote(parseInt(dg[1],10)-1);emoOpen(false);return}
 if(e.code==='Escape'){e.preventDefault();emoOpen(false);return}
 }
