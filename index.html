@@ -596,6 +596,57 @@ if(n<8)return 1+(k%2);
 return 1+(k%3);
 }
 function wrenchCount(id){let c=0;S.items.forEach(it=>{if(it.owner===id&&it.type==='tool')c++});return c}
+function needPrompt(){
+const me=S.me;
+if(!me||me.spec||me.out)return null;
+const pr=hasPrinter(S.myId),mine=S.items.filter(it=>it.owner===S.myId);
+const gray=mine.some(it=>it.type==='fil'&&it.meta<0),wr=wrenchCount(S.myId);
+const printing=!!S.prs[S.myId];
+const noPrinter='You need your 3D printer to make wrenches. Pick it back up!';
+const r=me.rep;
+if(r>=0&&r<1000&&!S.stDone[r]){
+const dm=(S.dmg&&S.dmg[r])||1,have=wrenchesAt(r);
+if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
+if(have>=dm)return null;
+if(wr>0)return{t:'This area needs '+dm+' wrench'+(dm>1?'es':'')+' ('+have+'/'+dm+'). Bring more!',c:'#ffd93d'};
+if(!pr)return{t:noPrinter,c:'#ff8a5c'};
+if(!gray)return{t:'You need a wrench to repair this area! Find gray filament.',c:'#ff8a5c'};
+return null;
+}
+if(r===-3&&brLive()){
+const have=wrenchesAt(-3);
+if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
+if(have>=2)return null;
+if(wr>0)return{t:'The breach needs 2 wrenches ('+have+'/2). Bring more!',c:'#ffd93d'};
+if(!pr)return{t:noPrinter,c:'#ff8a5c'};
+if(!gray)return{t:'You need a wrench to patch this breach! Find gray filament.',c:'#ff8a5c'};
+return null;
+}
+if(r===-2&&allDone()){
+if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
+if(wr===0){
+if(!pr)return{t:noPrinter,c:'#ff8a5c'};
+if(!gray)return{t:'You need a wrench to start the reactor! Find gray filament.',c:'#ff8a5c'};
+return null;
+}
+const ra=[];S.players.forEach(q=>{if(!q.spec&&!q.out)ra.push(q)});
+const ri=ra.filter(q=>q.rep===-2).length;
+if(ri<ra.length)return{t:'Waiting for the whole crew to enter the ring ('+ri+'/'+ra.length+')',c:'#ffd93d'};
+return null;
+}
+for(const w of S.L.walls){
+if(w.door===undefined||w.open)continue;
+const cx=Math.max(w.x,Math.min(me.x,w.x+w.w)),cy=Math.max(w.y,Math.min(me.y,w.y+w.h));
+if(Math.hypot(me.x-cx,me.y-cy)>R+110)continue;
+const nm=KEYNAME[w.door];
+if(mine.some(it=>it.type==='key'&&it.meta===w.door))return null;
+if(printing)return{t:'Printing a '+nm+' keycard...',c:'#ffd93d'};
+if(!pr)return{t:'You need your 3D printer to make a key. Pick it back up!',c:'#ff8a5c'};
+if(!mine.some(it=>it.type==='fil'&&it.meta===w.door))return{t:'You need a '+nm+' key to open this door! Find '+nm+' filament.',c:KEYCOL[w.door]};
+return null;
+}
+return null;
+}
 function wrenchesAt(r){let c=0;S.players.forEach(p=>{if(p.rep===r&&!p.spec&&!p.out)c+=wrenchCount(p.id)});return c}
 function payWrenches(ids,n){
 let left=n;
@@ -1086,10 +1137,10 @@ target:()=>tutNearPanel()},
 text:()=>'Stay inside the circle until the bar fills. It repairs by itself. More friends in the circle makes it faster.',
 target:()=>tutNearPanel()},
 {id:'printer',max:16,ok:()=>hasPrinter(S.myId)&&!S.tut.f.printed&&S.time>2,fin:()=>S.tut.f.printed,
-text:()=>'This is your 3D printer. Collect filament. Standing in a soft spot circle with gray filament prints a wrench by itself, and touching a door with matching colored filament prints its keycard.',
+text:()=>'This is your 3D printer. Collect filament. Standing in a damaged area circle with gray filament prints a wrench by itself, and touching a door with matching colored filament prints its keycard.',
 target:()=>null},
 {id:'tool',max:11,ok:()=>!!tutTool(),fin:()=>false,
-text:()=>'You have a wrench. Stand in a soft spot circle to patch it. The number on the spot is how many wrenches it uses up.',
+text:()=>'You have a wrench. Stand in a damaged area circle to patch it. The number on the spot is how many wrenches it uses up.',
 target:()=>null},
 {id:'throw',max:9,ok:()=>!!S.items.find(it=>it.owner===S.myId)&&!S.tut.f.threw&&S.tut.seen.tool,fin:()=>S.tut.f.threw,
 text:()=>'Tip: press '+tl('drop')+' to throw an item. It sends you the opposite way, which is a quick way to travel.',
@@ -1101,7 +1152,7 @@ target:()=>{const k=tutKey(),w=k&&S.L.walls.find(q=>q.door===k.meta&&!q.open);re
 text:()=>'Fly into stars for bonus points.',
 target:()=>tutNearStar()},
 {id:'final',max:30,urgent:true,ok:()=>allDone(),fin:()=>false,
-text:()=>'All soft spots patched! Everyone needs a wrench, then the whole crew flies into the glowing reactor ring.',
+text:()=>'All damaged areas patched! Everyone needs a wrench, then the whole crew flies into the glowing reactor ring.',
 target:()=>({x:S.L.fin.x,y:S.L.fin.y,r:S.L.fin.r,d:Math.hypot(S.me.x-S.L.fin.x,S.me.y-S.L.fin.y)})},
 {id:'hurry',max:7,urgent:true,ok:()=>S.L.limit-S.time<30&&!allDone(),fin:()=>false,
 text:()=>'Hurry! The ship self destructs in under 30 seconds.',
@@ -1525,7 +1576,7 @@ case 'sd':{
 S.stDone[m.i]=true;S.stProg[m.i]=1;
 const s=S.L.st[m.i],p=S.players.get(m.by);
 burst(s.x,s.y,'#4cd964',30,320,0.9);sfx.done();S.shake=Math.max(S.shake,6);
-toast((p?p.name:'Someone')+' patched soft spot '+(m.i+1)+'/'+S.L.st.length,'#7affc8');
+toast((p?p.name:'Someone')+' patched damaged area '+(m.i+1)+'/'+S.L.st.length,'#7affc8');
 if(allDone())toast('REACTOR UNLOCKED! Everyone into the ring, each holding a wrench','#c58bff');
 break}
 case 'pk':{
@@ -1574,8 +1625,8 @@ toast((q?q.name:'Someone')+' unlocked the '+KEYNAME[m.k]+' door','#ffd93d');
 sfx.done();S.shake=Math.max(S.shake,6);
 }
 break}
-case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Soft spot '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn()}break}
-case 'dgb':{toast('Soft spot '+(m.i+1)+' burst open','#ff6b6b');break}
+case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Damaged area '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn()}break}
+case 'dgb':{toast('Damaged area '+(m.i+1)+' burst open','#ff6b6b');break}
 case 'eng':{
 const p=S.players.get(m.id);
 toast('You have a 3D printer. Collect filament and print with '+(tc.on?'Y':lab(B.repair[0])),'#ffd93d');
@@ -2506,7 +2557,7 @@ function drawHud(L,sc){
 const me=S.me,t=S.time;
 txt('BLIP-A  LEVEL '+L.n+' / '+MAXL+'  '+L.name.toUpperCase(),16,22,18,'#fff','left','800');
 const done=S.stDone.filter(Boolean).length;
-txt(allDone()?'REACTOR: EVERYONE IN THE RING WITH A WRENCH':'Soft spots patched '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
+txt(allDone()?'REACTOR: EVERYONE IN THE RING WITH A WRENCH':'Damaged areas patched '+done+'/'+L.st.length,16,46,15,allDone()?'#c58bff':'#7affc8');
 if(S.phase==='won'||S.phase==='board')txt('SELF DESTRUCT HALTED',16,70,16,'#7affc8','left','900');
 if(t>=0&&S.phase==='play'){
 const rem=Math.max(0,L.limit-t),low=rem<=20;
@@ -2545,7 +2596,7 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
-if(t>=0&&S.phase==='play'&&S.me.rep>=0&&S.me.rep<1000&&!S.stDone[S.me.rep]&&!holdsTool(S.myId)&&!S.prs[S.myId])txt('NEED GRAY FILAMENT TO PRINT A WRENCH',vw/2,vh*0.62,20,'#ff8a5c','center','900');
+if(t>=0&&S.phase==='play'){const np=needPrompt();if(np){const w=Math.min(vw-24,560);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,18,np.c,'center','900')}}
 if(allDone()&&t>=0&&S.phase==='play'){
 const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
 const ri=ra.filter(p=>p.rep===-2),rw=ri.filter(p=>wrenchCount(p.id)>0).length;

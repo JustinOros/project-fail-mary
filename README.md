@@ -1,6 +1,6 @@
 # Project Fail Mary
 
-A zero gravity co-op and competitive ship repair game that runs in the browser. Float around a broken spaceship as a five legged crawler, grab walls, push off, patch the soft spots, then bring the whole crew to the reactor before the ship self destructs.
+A zero gravity co-op and competitive ship repair game that runs in the browser. Float around a broken spaceship as a five legged crawler, grab walls, push off, patch the damaged areas, then bring the whole crew to the reactor before the ship self destructs.
 
 Play it: https://justinoros.github.io/project-fail-mary/
 
@@ -19,9 +19,9 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 ## How a round works
 
-- Patch every soft spot in the ship's walls. Each one shows a number: how many wrenches it uses up. Wrenches are made on the 3D printer (see below). Everyone standing in the circle counts together, and more players patch faster.
-- From Level 3 on, soft spots get worse over time (up to 3 wrenches). A spot at 3 that is ignored for 30 seconds bursts into a hull breach, then needs patching again.
-- Once every soft spot is patched, the reactor unlocks. Every active player must be inside the ring at the same time, each holding a wrench, for about 4 seconds. If someone leaves, the progress slowly drains. Each player's wrench is used up at the end. The player with the most points that round gets the round bonus.
+- Patch every damaged area in the ship's walls. Each one shows a number: how many wrenches it uses up. Wrenches are made on the 3D printer (see below). Everyone standing in the circle counts together, and more players patch faster.
+- From Level 3 on, damaged areas get worse over time (up to 3 wrenches). A spot at 3 that is ignored for 30 seconds bursts into a hull breach, then needs patching again.
+- Once every damaged area is patched, the reactor unlocks. Every active player must be inside the ring at the same time, each holding a wrench, for about 4 seconds. If someone leaves, the progress slowly drains. Each player's wrench is used up at the end. The player with the most points that round gets the round bonus.
 - A self destruct timer is running. If time runs out, the ship explodes and everyone loses.
 - After each round a scoreboard shows everyone's points until the host starts the next level.
 - There are 10 levels, and each one is bigger and nastier than the last.
@@ -31,8 +31,8 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 | Action | Points |
 | --- | --- |
 | Finish the final repair | 300 |
-| Finish a soft spot | 60 |
-| Help patch a soft spot | 40 |
+| Finish a damaged area | 60 |
+| Help patch a damaged area | 40 |
 | Collect a star | 20 |
 
 ## Moving around
@@ -58,9 +58,10 @@ You float in zero gravity, so momentum is everything.
 
 - Every player has their own 3D printer, which they carry like any item. It is heavy, and it only works for its owner, so another player who picks it up cannot print with it. On Levels 1 and 2 everyone also starts with one wrench.
 - Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, and you can throw it to a friend who needs it.
-- Printing is automatic. Stand in a soft spot circle, a breach, or the reactor ring with gray filament and no wrench, and your printer makes a wrench (2 seconds) which is then used on the repair. Touch a locked door while carrying filament of its color and the keycard is printed and the door opens. Players in the same circle do not print more wrenches than the spot needs.
+- Printing is automatic. Stand in a damaged area circle, a breach, or the reactor ring with gray filament and no wrench, and your printer makes a wrench (2 seconds) which is then used on the repair. Touch a locked door while carrying filament of its color and the keycard is printed and the door opens. Players in the same circle do not print more wrenches than the spot needs.
+- A banner at the bottom tells you what you are missing, for example "You need a wrench to repair this area! Find gray filament." or "You need a Blue key to open this door! Find Blue filament."
 - You can also press E (Y on a controller or phone) to print by hand, for example to make a spare wrench to give a friend. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
-- Wrenches can be dropped and passed to friends. Soft spots, hull breach patches (2 wrenches) and the reactor (one per player) use them up.
+- Wrenches can be dropped and passed to friends. Damaged areas, hull breach patches (2 wrenches) and the reactor (one per player) use them up.
 
 ## Colored doors and keycards
 
