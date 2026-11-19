@@ -2987,7 +2987,7 @@ ctx.fillStyle='#10162e';ctx.beginPath();ctx.arc(ex+dx*1.3,ey+dy*1.3,1.9,0,6.3);c
 ctx.restore();
 let hold=null;
 for(const it of S.items)if(it.owner===p.id&&(!hold||(it.got||0)>(hold.got||0)))hold=it;
-if(hold&&ITEMS[hold.type]){ctx.font='15px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ITEMS[hold.type].icon,p.x+hx,p.y+hy)}
+if(hold&&hold.type!=='boots'&&ITEMS[hold.type]){ctx.font='15px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ITEMS[hold.type].icon,p.x+hx,p.y+hy)}
 txt(p.name,p.x,p.y-32,isMe?14:12,isMe?'#ffffff':'#cfd8ff','center');
 if(p.stun>0){ctx.font='20px serif';ctx.textAlign='center';ctx.fillText('💫',p.x+Math.cos(S.time*8)*10,p.y-24)}
 }
@@ -3845,9 +3845,8 @@ const n=printRows().length;
 if(k==='up')S.pmSel=((S.pmSel||0)+n-1)%n;
 else if(k==='down'||k==='right')S.pmSel=((S.pmSel||0)+1)%n;
 else if(k==='left')S.pmSel=((S.pmSel||0)+n-1)%n;
-else if(k==='a')pmChoose(S.pmSel||0);
+else if(k==='a'||k==='x'||k==='y')pmChoose(S.pmSel||0);
 else if(k==='b')pmOpen(false);
-else if(k==='y')doPrint();
 return;
 }
 if(k==='left'&&NAV.held[k]&&NAV.held[k].first)S.me.sel=(S.me.sel+SLOTS-1)%SLOTS;
