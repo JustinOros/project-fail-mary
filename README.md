@@ -72,7 +72,7 @@ You float in zero gravity, so momentum is everything.
 - When your fuel is low and you carry an Astrophage, a button appears above your inventory. Tap or click it to burn 1 Astrophage for a full tank in one step.
 - The print menu can also make a Flashlight and Gravity Boots, 2 gray filament each. They are never printed automatically, so you have to open the menu. You can hold one of each at a time. Select the item in your inventory to use it; a newly printed one is selected for you.
 - Flashlight: lights up the area around you and slowly pulls nearby Astrophage toward you so it is easy to collect.
-- Gravity Boots: while selected, five small boots show on your feet. When you are close to a wall they pull you onto it and you can walk along it by holding Thrust in the direction you want to go. Hold Grab and release to jump off and fly. They have no fuel limit for now.
+- Gravity Boots: they work as long as you carry them, with no need to select them. Five small boots show on your feet. Drop them to take them off. When you are close to a wall they pull you onto it and you can walk along it by holding Thrust in the direction you want to go. Hold Grab and release to jump off and fly. They have no fuel limit for now.
 - Wrenches can be dropped and passed to friends. Damaged areas and hull breach patches (2 wrenches) use them up.
 
 ## Colored doors and keycards

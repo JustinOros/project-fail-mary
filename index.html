@@ -1113,7 +1113,7 @@ if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=0;return}
 const can=me.stun<=0&&!me.dead;
 const grab=can&&inp.grab;
 me.bootCool=Math.max(0,(me.bootCool||0)-dt);
-const bootEq=can&&equipped(me,'boots');
+const bootEq=can&&hasItemType(me.id,'boots');
 if(me.att&&me.att.boot&&!me.att.ch&&!bootEq){const a0=me.att;me.att=null;me.vx=a0.nx*40;me.vy=a0.ny*40;me.bootCool=0.6}
 if(me.att&&!me.att.boot&&bootEq&&grab){me.att.boot=true;me.att.ch=true}
 let bq=null;
@@ -2283,7 +2283,7 @@ else toast((q?q.name:'Someone')+' burned an Astrophage for fuel','#ffe45c');
 shipSay('burn');
 break}
 if(m.mk){
-if(m.id===S.myId){sfx.ding();toast(m.mk==='flash'?'Printed a Flashlight. It is on while selected in your inventory':'Printed Gravity Boots. Wear them by selecting them in your inventory','#7affc8');S.autoSel=m.mk;S.autoSelT=S.time+5}
+if(m.id===S.myId){sfx.ding();toast(m.mk==='flash'?'Printed a Flashlight. It is on while selected in your inventory':'Printed Gravity Boots. They work while you carry them. Drop them to take them off','#7affc8');S.autoSel=m.mk==='flash'?m.mk:S.autoSel;S.autoSelT=S.time+5}
 break}
 if(m.id===S.myId){sfx.ding();S.tut.f.printed=true;toast(m.k<0?'Printed a wrench':'Printed a '+KEYNAME[m.k]+' keycard','#7affc8')}
 break}
@@ -2922,7 +2922,7 @@ ctx.restore();
 function shade(h,f){const n=parseInt(h.slice(1),16);const c=v=>Math.max(0,Math.min(255,Math.round(v*f)));return 'rgb('+c(n>>16)+','+c((n>>8)&255)+','+c(n&255)+')'}
 function drawPlayer(p,isMe){
 const col=p.dead?'#8a91ab':COLORS[p.color%8];
-const bootsOn=!p.dead&&equipped(p,'boots'),lampOn=!p.dead&&equipped(p,'flash');
+const bootsOn=!p.dead&&p.id!==undefined&&hasItemType(p.id,'boots'),lampOn=!p.dead&&equipped(p,'flash');
 ctx.save();ctx.translate(p.x,p.y);
 if(lampOn){
 const lg=ctx.createRadialGradient(0,0,6,0,0,150);lg.addColorStop(0,'rgba(255,240,170,.38)');lg.addColorStop(1,'rgba(255,240,170,0)');
