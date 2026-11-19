@@ -52,7 +52,6 @@ You float in zero gravity, so momentum is everything.
 - Thrusters give you extra control, but fuel is limited and does not refill on its own.
 - Repairs start by themselves while you are inside the dashed ring around a panel. No button is needed. If you leave the ring for more than 1 second, or get stunned, the progress resets back to zero.
 - Fuel boxes refill half a tank. Just fly into one. A box is ignored while your tank is almost full, so it stays for someone who needs it.
-- You can share your own fuel with a nearby friend by holding **share fuel** next to them.
 - Crawlers bump into each other, so you can knock a friend off a panel.
 - If a breach sucks you out, you respawn at an airlock as a downed crawler with X eyes and cannot move or act. Any teammate can revive you by staying inside your dashed circle for about 3 seconds, and more helpers revive you faster. Grabbing a downed friend tethers them to you so you can drag them and stay in range. If nobody is left standing, the ship reboots you automatically after about 6 seconds.
 
@@ -102,7 +101,6 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | Aim | Mouse, WASD or arrow keys | Left stick |
 | Grab and push off | Space or left click | A or LB |
 | Thrusters | Shift or right click | RT, RB or B |
-| Share fuel | G | LT |
 | Select inventory slot | 1 to 9 or mouse wheel | D-pad left and right |
 | Drop item | Q or right click a slot | X |
 | Print on 3D printer | E or F | Y |
@@ -118,7 +116,7 @@ In menus on a controller, use the D-pad or stick to move, A to select, B to go b
 Touch controls appear automatically on a touchscreen. Landscape gives the widest view, and the game adjusts when you rotate your phone.
 
 - Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
-- The buttons on the right copy an Xbox controller: A grabs, B thrusts, X drops the selected item and Y prints. LT shares fuel. Hold them like the keyboard keys.
+- The buttons on the right copy an Xbox controller: A grabs, B thrusts, X drops the selected item and Y prints. Hold them like the keyboard keys.
 - Tap a slot in the bottom bar to select an item.
 - Tap the chat bubble next to the cog to type a message. Your phone keyboard pops up.
 
