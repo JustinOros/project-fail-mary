@@ -2552,6 +2552,7 @@ ctx.restore();
 }
 {
 const on=allDone()&&!L.rd.doorW.open;
+if(on){
 const ids=[...S.players.values()].filter(q=>!q.spec&&!q.out).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
 ids.forEach((q,i)=>{
 const sp=L.rd.sw[i];if(!sp||L.rd.doorW.open||!vis(sp.x-30,sp.y-30,60,60))return;
@@ -2563,6 +2564,7 @@ ctx.fillStyle=rgba(c,held?0.95:on?0.3+0.15*Math.sin(t*4):0.15);ctx.beginPath();c
 ctx.strokeStyle=held?'#10172c':'#ffffff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(0,1,6,-1.15,Math.PI*1.5+0.35+0.0);ctx.stroke();ctx.beginPath();ctx.moveTo(0,-9);ctx.lineTo(0,0);ctx.stroke();
 ctx.restore();
 });
+}
 }
 L.pick.forEach((k,i)=>{
 if(S.taken.has(i)||!vis(k.x-30,k.y-30,60,60))return;
