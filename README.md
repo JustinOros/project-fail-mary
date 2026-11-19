@@ -20,8 +20,8 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 ## How a round works
 
 - Repair every red panel in the ship. Panels repair faster the more players work on them together.
-- Whoever finishes a panel takes its tool, shown as a wrench next to their name and in their inventory.
-- Once all panels are fixed, the reactor unlocks. The final repair only progresses while every tool is inside the reactor ring, whether a player is carrying it or it is lying on the floor there, no matter who is doing the repair. The first player to finish the final repair wins the round and gets the most points.
+- Each panel needs a wrench from every player repairing it, and the wrench is used up when the panel is fixed. Wrenches are made on the 3D printer (see below).
+- Once all panels are fixed, the reactor unlocks. Fly into the reactor ring and stay inside it. The first player to finish the final repair wins the round and gets the most points.
 - A self destruct timer is running. If time runs out, the ship explodes and everyone loses.
 - After each round a scoreboard shows everyone's points until the host starts the next level.
 - There are 10 levels, and each one is bigger and nastier than the last.
@@ -49,19 +49,24 @@ You float in zero gravity, so momentum is everything.
 
 ## Inventory and tools
 
-- The row of slots at the bottom of the screen is your inventory. New items, including tools, go into the first free slot.
+- The row of slots at the bottom of the screen is your inventory. New items go into the first free slot.
 - Select a slot with the number keys 1 to 9, the mouse wheel, a click, or left and right on the D-pad. The selected item is equipped and shown in your crawler's hand.
 - Drop the selected item with Q, right click on a slot, or X on a controller. Dropped items float away, and anyone can pick them up by touching them. You cannot pick your own drop back up for about a second and a half.
-- Tools are heavy. Every tool you carry makes your thrusters weaker, lowers your top speed, weakens your push off, and burns fuel faster. Dropping tools at the reactor ring is a good way to ferry them.
-- More item types will be added later.
+- Wrenches and the printer are heavy. Every heavy item you carry makes your thrusters weaker, lowers your top speed, weakens your push off, and burns fuel faster. Throwing items is a quick way to pass them to friends.
 
-## Colored doors and keys
+## 3D printer, filament and keycards
 
-From level 2 on, some doorways between rooms are sealed with a colored lock. A key of the same color is lying somewhere in the ship, always in a part you can reach before that door.
+- Each round one player is the engineer and starts with the 3D printer, which they carry like any item. The engineer changes every round, and in a solo game it is always you. On Levels 1 and 2 the engineer also starts with one wrench.
+- Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, so gather it and bring it to the engineer or throw it to them.
+- The engineer presses E (Y on a controller or phone) to print. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
+- Wrenches can be dropped and passed to friends. Panels need them and hull breach patches use one up too.
 
-- Pick up a key by touching it. It goes into your inventory and has no weight.
-- Carry the key and touch the matching door to unlock it for everyone. The key is used up.
-- Keys can be dropped and passed to friends like any other item.
+## Colored doors and keycards
+
+From level 2 on, some doorways between rooms are sealed with a colored lock. Filament of the same color is lying somewhere in the ship, always in a part you can reach before that door. Print it into a keycard on the 3D printer.
+
+- Carry the keycard and touch the matching door to unlock it for everyone. The keycard is used up.
+- Keycards can be dropped and passed to friends like any other item.
 - Locked doors are shown on the minimap in their color.
 
 ## The Blip-A
@@ -88,6 +93,7 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | Share fuel | G | LT |
 | Select inventory slot | 1 to 9 or mouse wheel | D-pad left and right |
 | Drop item | Q or right click a slot | X |
+| Print on 3D printer | E or F | Y |
 | Chat | Enter | Select or View |
 | Mute | M | |
 
@@ -100,7 +106,7 @@ In menus on a controller, use the D-pad or stick to move, A to select, B to go b
 Touch controls appear automatically on a touchscreen. Landscape gives the widest view, and the game adjusts when you rotate your phone.
 
 - Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
-- The buttons on the right copy an Xbox controller: A grabs, B thrusts and X drops the selected item. LT shares fuel. Hold them like the keyboard keys.
+- The buttons on the right copy an Xbox controller: A grabs, B thrusts, X drops the selected item and Y prints. LT shares fuel. Hold them like the keyboard keys.
 - Tap a slot in the bottom bar to select an item.
 - Tap the chat bubble next to the cog to type a message. Your phone keyboard pops up.
 
@@ -147,4 +153,4 @@ The lobby code appears at the top of the screen during a round. Any player can t
 
 ## Hull breach events
 
-From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Carry a repair tool (keys do not count) to the hole and stay next to the hole for about 3 seconds to patch it; more players patch faster, and the tool is not used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.
+From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Carry a wrench to the hole and stay next to it for about 3 seconds to patch it; more players patch faster, and one wrench is used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.
