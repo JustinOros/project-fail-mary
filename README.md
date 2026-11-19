@@ -87,7 +87,7 @@ From level 2 on, some doorways between rooms are sealed with a colored lock. Fil
 
 ## The Blip-A
 
-The ship you are repairing is the Blip-A, and it is slowly rotating clockwise. Outside, a red planet, a tethered research spacecraft and a spacewalking astronaut drift past the hull in the other direction, so you can always tell the ship is spinning.
+The ship you are repairing is the Blip-A, and it is slowly rotating clockwise. From inside it looks like a real spacecraft: riveted hull plating with portholes, deck plating on the floor, a curved nose with a cockpit window and a blinking antenna, three glowing engines at the stern, and fins and pods along the top and bottom. These are only for looks and do not change how you move. Outside, a red planet, a tethered research spacecraft and a spacewalking astronaut drift past the hull in the other direction, so you can always tell the ship is spinning.
 
 ## Tutorial hints
 
