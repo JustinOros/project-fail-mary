@@ -574,7 +574,7 @@ if(id!=='H'&&conn&&conn.open)conn.send({t:'spawn',x:p.x,y:p.y,keep:1});
 return;
 }
 const sp=L.spawn[Math.floor(Math.random()*L.spawn.length)];
-S.items.forEach(it=>{if(it.owner===id){it.owner=null;it.slot=-1;it.x=sp.x;it.y=sp.y;it.vx=it.vy=0}});
+S.items.forEach(it=>{if(it.owner===id&&it.type!=='printer'){it.owner=null;it.slot=-1;it.x=sp.x;it.y=sp.y;it.vx=it.vy=0}});
 p.out=true;p.outUntil=performance.now()+3000;p.rx=sp.x;p.ry=sp.y;p.att=null;p.rep=-1;
 emit({t:'ejd',id});
 }
@@ -1343,7 +1343,7 @@ S.items.push({uid:S.nextUid++,got:slot>=0?++S.gotSeq:0,type,meta,owner:slot>=0?i
 }
 function handleDrop(id,slot,dx,dy){
 const it=invItem(id,slot),p=S.players.get(id);
-if(!it||!p)return;
+if(!it||!p||it.type==='printer')return;
 const l=Math.hypot(dx,dy)||1;
 it.owner=null;it.slot=-1;it.x=p.x;it.y=p.y;
 it.vx=p.vx*0.5+dx/l*320;it.vy=p.vy*0.5+dy/l*320;
@@ -1398,6 +1398,7 @@ function dropSelected(){
 const me=S.me;if(!me||S.phase==='board'||S.time<0)return;
 const it=invItem(S.myId,me.sel);
 if(!it)return;
+if(it.type==='printer'){toast('Your 3D printer stays with you','#ff8a5c');return}
 S.tut.f.threw=true;
 const dx=Math.cos(me.ang),dy=Math.sin(me.ang);
 if(S.isHost)handleDrop(S.myId,me.sel,dx,dy);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'drop',slot:me.sel,dx,dy});
@@ -2549,7 +2550,7 @@ if(it.type==='key'){ctx.fillStyle=KEYCOL[it.meta];ctx.fillRect(x+g.size-14,g.y+4
 }
 }
 const cur=invItem(S.myId,me.sel);
-if(cur&&ITEMS[cur.type])txt(itemName(cur)+(tc.on?'   (tap X to drop)':'   ('+lab(B.drop[0])+' or right click to drop)'),g.x0+g.total/2,g.y-14,14,'#ffd93d','center','700');
+if(cur&&ITEMS[cur.type])txt(itemName(cur)+(cur.type==='printer'?'':tc.on?'   (tap X to drop)':'   ('+lab(B.drop[0])+' or right click to drop)'),g.x0+g.total/2,g.y-14,14,'#ffd93d','center','700');
 const wt=myWeight();
 if(wt>0)txt('Carrying '+wt+' heavy item'+(wt>1?'s':'')+': slower and thirstier',16,tc.on?vh-96:vh-48,13,'#ffb347','left','700');
 }
