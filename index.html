@@ -2671,7 +2671,7 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
-if(t>=0&&S.phase==='play'){const np=needPrompt();if(np){const w=Math.min(vw-24,560);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,18,np.c,'center','900')}}
+if(t>=0&&S.phase==='play'){let np=needPrompt();const mm=S.me;if(!np&&mm&&!mm.spec&&!mm.out&&mm.fuel<=0.01&&!(mm.att&&mm.att.towed))np=mm.att&&!mm.att.pid?{t:'Out of fuel! Aim away from where you want to go, then release to launch off.',c:'#ff8a5c'}:{t:"You're out of fuel! Grab a wall and launch off to get around the ship.",c:'#ff8a5c'};if(np){const fs=vw<520?15:18;ctx.font='900 '+fs+'px system-ui,-apple-system,Segoe UI,sans-serif';const w=Math.min(vw-16,ctx.measureText(np.t).width+36);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,fs,np.c,'center','900')}}
 if(allDone()&&t>=0&&S.phase==='play'){
 const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
 const ri=ra.filter(p=>p.rep===-2),rw=ri.filter(p=>wrenchCount(p.id)>0).length;
