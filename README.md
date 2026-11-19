@@ -120,6 +120,7 @@ Touch controls appear automatically on a touchscreen. Landscape gives the widest
 
 - Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
 - The buttons on the right copy an Xbox controller: A grabs, B thrusts, X drops the selected item and Y prints. Hold them like the keyboard keys.
+- With **Auto grab (touch)** on in the cog, which is the default, a quick tap on A keeps your grip and the button changes to RELEASE. Tap it again to let go. Turn Auto grab off to grab only while you hold A.
 - Tap a slot in the bottom bar to select an item.
 - Tap the chat bubble next to the cog to type a message. Your phone keyboard pops up.
 

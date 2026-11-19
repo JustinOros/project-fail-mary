@@ -236,11 +236,11 @@ sl.oninput=()=>{setVol(k,sl.value/100)};
 sl.onchange=()=>{if(k==='s'||k==='a')sfx.chime();else if(k==='w')sfx.beep(true);else if(k==='v')aiSpeak('Systems check. Amaze.',true)};
 r.appendChild(sl);box.appendChild(r);
 });
-[['Ship voice','aiVoice','zg-voice'],['Ship captions','aiCapOn','zg-caps']].forEach(([nm,key,sk])=>{
+[['Auto grab (touch)','autoGrab','zg-autograb'],['Ship voice','aiVoice','zg-voice'],['Ship captions','aiCapOn','zg-caps']].forEach(([nm,key,sk])=>{
 const r=document.createElement('div');r.className='sr';
 const n=document.createElement('div');n.className='nm';n.textContent=nm;r.appendChild(n);
 const b=document.createElement('button');b.className='kb';b.textContent=S[key]?'ON':'OFF';
-b.onclick=()=>{S[key]=!S[key];try{localStorage.setItem(sk,S[key]?'1':'0')}catch(e){}if(!S.aiVoice&&window.speechSynthesis)try{speechSynthesis.cancel()}catch(e){}renderSettings()};
+b.onclick=()=>{S[key]=!S[key];if(key==='autoGrab'&&!S[key]){tc.lat=false;tc.btn.grab=false}try{localStorage.setItem(sk,S[key]?'1':'0')}catch(e){}if(!S.aiVoice&&window.speechSynthesis)try{speechSynthesis.cancel()}catch(e){}renderSettings()};
 r.appendChild(b);box.appendChild(r);
 });
 {
@@ -978,7 +978,7 @@ function tUp(e){
 if(e.pointerId===tc.sid){tc.sid=null;tc.act=false;tc.vx=tc.vy=0}
 const k=tc.bid[e.pointerId];
 if(k){
-if(k==='grab'){if(performance.now()-tc.gt<250)tc.lat=true;else tc.btn.grab=false}
+if(k==='grab'){if(S.autoGrab&&performance.now()-tc.gt<250)tc.lat=true;else tc.btn.grab=false}
 else if(k!=='grabx')tc.btn[k]=false;
 delete tc.bid[e.pointerId];
 }
@@ -1002,7 +1002,7 @@ ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.3);ctx.fill();
 ctx.strokeStyle=b.col;ctx.lineWidth=on?4:2.5;ctx.stroke();
 if(b.cap){
 txt(b.label,b.x,b.y-b.r*0.12,b.r*0.8,'#fff','center','900');
-txt(b.k==='grab'&&tc.lat?'LOCKED':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
+txt(b.k==='grab'&&tc.lat?'RELEASE':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
 }else txt(b.label,b.x,b.y,b.r*1.0,'#fff','center','800');
 }
 if(vh>vw&&!S.pm)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,'#ffd93d','center','700');
@@ -1366,7 +1366,7 @@ win:{p:3,t:['Amaze. Amaze. Amaze.','Power restored. Fist my bump.','Ship fixed. 
 boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boom. Is bad. Words of encouragement. Try again.','Blip-A is gone. Rocky sad. We try again.']}
 };
 
-try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true}
+try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.autoGrab=localStorage.getItem('zg-autograb')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true;S.autoGrab=true}
 function aiInit(){
 if(S.aiInit)return;
 S.aiInit=1;
