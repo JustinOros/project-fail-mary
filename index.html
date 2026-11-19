@@ -978,7 +978,7 @@ function tUp(e){
 if(e.pointerId===tc.sid){tc.sid=null;tc.act=false;tc.vx=tc.vy=0}
 const k=tc.bid[e.pointerId];
 if(k){
-if(k==='grab'){if(S.autoGrab&&performance.now()-tc.gt<250)tc.lat=true;else tc.btn.grab=false}
+if(k==='grab'){if(!S.autoGrab&&performance.now()-tc.gt<250)tc.lat=true;else tc.btn.grab=false}
 else if(k!=='grabx')tc.btn[k]=false;
 delete tc.bid[e.pointerId];
 }
@@ -1002,7 +1002,7 @@ ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.3);ctx.fill();
 ctx.strokeStyle=b.col;ctx.lineWidth=on?4:2.5;ctx.stroke();
 if(b.cap){
 txt(b.label,b.x,b.y-b.r*0.12,b.r*0.8,'#fff','center','900');
-txt(b.k==='grab'&&tc.lat?'RELEASE':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
+txt(b.k==='grab'&&(tc.lat||(S.autoGrab&&S.me&&S.me.att&&!S.me.att.boot&&!S.me.att.held))?'RELEASE':b.cap,b.x,b.y+b.r*0.58,Math.max(8,b.r*0.26),'rgba(255,255,255,.85)','center','800');
 }else txt(b.label,b.x,b.y,b.r*1.0,'#fff','center','800');
 }
 if(vh>vw&&!S.pm)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,'#ffd93d','center','700');
@@ -1112,6 +1112,8 @@ me.rep=-1;me.rr=me.att?1:0.5;
 if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=0;return}
 const can=me.stun<=0&&!me.dead;
 const grab=can&&inp.grab;
+const autoOn=tc.on&&S.autoGrab&&can;
+me.agoff=Math.max(0,(me.agoff||0)-dt);
 me.bootCool=Math.max(0,(me.bootCool||0)-dt);
 const bootEq=can&&hasItemType(me.id,'boots');
 if(me.att&&me.att.boot&&!me.att.ch&&!bootEq){const a0=me.att;me.att=null;me.vx=a0.nx*40;me.vy=a0.ny*40;me.bootCool=0.6}
@@ -1133,7 +1135,8 @@ else if(!grab){me.tow=null;me.nograb=0.15;sfx.snap()}
 if(me.att){
 me.vx=me.vy=0;
 if(!can){me.att=null;me.charge=0}
-else if(grab){me.charge=Math.min(1,me.charge+dt/0.9);if(me.att.boot)me.att.ch=true}
+else if(grab){me.charge=Math.min(1,me.charge+dt/0.9);if(me.att.boot)me.att.ch=true;me.att.held=true}
+else if(autoOn&&!me.att.boot&&!me.att.held){me.charge=0}
 else if(me.att.boot&&!me.att.ch){
 const a=me.att;
 {
@@ -1161,7 +1164,7 @@ const sp=(70+430*me.charge)/(1+0.12*wt);
 const cr=null;
 me.vx=dx*sp+(cr?cr.vx||0:0);me.vy=dy*sp+(cr?cr.vy||0:0);me.x+=a.nx*3;me.y+=a.ny*3;
 sfx.launch(me.charge);burst(me.x-a.nx*R,me.y-a.ny*R,'#9fc4ff',5+Math.floor(me.charge*8),120,0.4);
-me.att=null;me.charge=0;me.nograb=0.12;if(a.boot)me.bootCool=0.9;
+me.att=null;me.charge=0;me.nograb=0.12;me.agoff=0.6;if(a.boot)me.bootCool=0.9;
 }
 }else{
 me.charge=0;
@@ -1204,7 +1207,7 @@ if(sp>cap){me.vx*=cap/sp;me.vy*=cap/sp}
 const steps=Math.max(1,Math.ceil(sp*dt/6));
 for(let s=0;s<steps;s++){
 me.x+=me.vx*dt/steps;me.y+=me.vy*dt/steps;
-if(collide(me,grab))break;
+if(collide(me,grab||(autoOn&&!me.att&&me.agoff<=0&&!inp.thr&&me.stun<=0)))break;
 }
 }
 if(can&&brLive()&&Math.hypot(me.x-S.br.x,me.y-S.br.y)<S.br.r+R*0.6){
