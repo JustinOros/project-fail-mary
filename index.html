@@ -543,6 +543,7 @@ star:()=>{tone(880,0.1,'sine',0.09);tone(1320,0.15,'sine',0.09,1,0.07)},
 win:()=>{[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,0.25,'triangle',0.1,1,i*0.11));[131,196,262].forEach(f=>tone(f,1.4,'triangle',0.07,1,0.7,'m'))},
 beep:hi=>tone(hi?880:440,0.18,'square',0.07,1,0,'w'),
 warn:()=>{tone(300,0.25,'sawtooth',0.07,1,0,'w');tone(300,0.25,'sawtooth',0.07,1,0.3,'w')},
+powerup:()=>{tone(50,3,'sawtooth',0.07,9);tone(100,3,'sine',0.06,10);tone(200,3,'triangle',0.04,8);nz(3,0.1,'bandpass',200,4000,0,1.2)},
 snap:()=>{tone(720,0.07,'square',0.04,0.4);nz(0.05,0.03,'highpass',3000,3000)},
 puff:()=>{tone(120,0.08,'sawtooth',0.02,0.5);nz(0.1,0.03,'highpass',2200,1600)},
 whoosh:()=>nz(0.9,0.14,'lowpass',2600,160,0,0.8),
@@ -1031,7 +1032,7 @@ return{grab,thr,rep,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 tReset();S.emo={};S.br=null;S.brNext=lvl>=4?20+Math.random()*20:1e9;S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.adSeen=false;S.hintT={};S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
+S.adSeen=false;S.rpwT=0;S.hintT={};S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -1314,6 +1315,7 @@ door:{p:2,t:['Reactor door open. Bring Astrophage inside.','Door open. Thank for
 power:{p:1,t:[a=>'Reactor eat Astrophage. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Amaze. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Good Astrophage. Reactor at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.']},
 revived:{p:2,t:['Friend is awake. Amaze.','You live again. Good good good.','Revive success. Thank.','Not dead anymore. Fist my bump.']},
 burn:{p:1,t:['Astrophage burned for fuel. We make more. Is okay.','Fuel from Astrophage. Costly. Still amaze.','Astrophage used. Be careful. Reactor still needs some.']},
+powering:{p:3,t:['Reactor powering. Brace. Is big.','Power coming. Hold on. Or fly. Amaze.','Reactor is waking. Fist my bump soon.']},
 lost:{p:2,t:['Friend is in space. No can die. Retrieve friend.','Crew member lost. You are friend. Come back.','Someone left ship. Is not plan.']},
 win:{p:3,t:['Amaze. Amaze. Amaze.','Power restored. Fist my bump.','Ship fixed. Together we solve. Thank.']},
 boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boom. Is bad. Words of encouragement. Try again.','Blip-A is gone. Rocky sad. We try again.']}
@@ -1994,8 +1996,11 @@ const have=S.items.filter(it=>it.type==='astro').length+(S.finProg.N||0);
 if(have<(S.finProg.M||0))spawnAstro();
 }
 if((S.finProg.N||0)>=(S.finProg.M||99)&&S.phase==='play'&&act.length>0){
+if(!S.finProg.pw){S.finProg.pw=1;S.rpwEnd=S.time+3;emit({t:'rpw'})}
+else if(S.time>=S.rpwEnd){
 const top=act.slice().sort((a,b)=>b.rd-a.rd)[0];
 roundWin(top.id);
+}
 }
 }
 
@@ -2111,6 +2116,7 @@ if(!m.keep){me.fuel=m.fu===undefined?1:m.fu;S.cam.x=m.x;S.cam.y=m.y;toast(m.dead
 }
 break}
 case 'ps':applyState(m);break;
+case 'rpw':{S.rpwT=performance.now();sfx.powerup();shipSay('powering');break}
 case 'rev':{
 const q=S.players.get(m.id);
 if(q){q.dead=false;q.rv=0;q.stun=0;burst(q.x,q.y,'#7affc8',28,300,0.8)}
@@ -3035,6 +3041,16 @@ if(open){ctx.strokeStyle=toolStatus().missing.length?'rgba(255,90,90,.6)':'rgba(
 ctx.fillStyle='#1a2340';ctx.strokeStyle=open?'#c58bff':'#5a6488';ctx.lineWidth=4;
 ctx.beginPath();ctx.roundRect(-58,-34,116,68,14);ctx.fill();ctx.stroke();
 ctx.font='34px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(open?'⚛️':'🔒',0,3);
+if(S.rpwT&&S.phase==='play'){
+const e=Math.min(1,(performance.now()-S.rpwT)/3000),rr=90+330*e*e;
+ctx.save();
+const gr=ctx.createRadialGradient(0,0,8,0,0,rr);gr.addColorStop(0,'rgba(255,255,255,'+(0.55*e)+')');gr.addColorStop(0.4,'rgba(255,228,92,'+(0.45*e)+')');gr.addColorStop(1,'rgba(197,139,255,0)');
+ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,rr,0,6.3);ctx.fill();
+for(let k=0;k<3;k++){const ph=(e*2.2+k/3)%1;ctx.strokeStyle='rgba(255,240,180,'+(0.6*(1-ph))+')';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,f.r+ph*260,0,6.3);ctx.stroke()}
+ctx.strokeStyle='rgba(255,255,255,'+(0.4+0.5*e)+')';ctx.lineWidth=3+e*5;ctx.lineCap='round';
+for(let k=0;k<6;k++){const a=t*(4+e*14)+k*1.047;ctx.beginPath();ctx.arc(0,0,f.r+16+e*20,a,a+0.5);ctx.stroke()}
+ctx.restore();
+}
 if(open){
 const v=S.finProg.M?(S.finProg.N||0)/S.finProg.M:0;
 txt((S.finProg.N||0)+'/'+(S.finProg.M||0)+' ✨',0,f.top?74:-74,18,'#ffe45c','center','900');
@@ -3432,6 +3448,13 @@ ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,
 txt('DEBRIS STORM INCOMING',vw/2,vh*0.2,30,'#ff6b6b','center','900');
 }
 aiWatch();drawShipCaption();
+if(S.rpwT&&S.phase==='play'&&!S.me.spec){
+const e=Math.min(1,(performance.now()-S.rpwT)/3000),fl=0.7+0.3*Math.sin(performance.now()/60);
+txt('REACTOR POWERING ON',vw/2,vh*0.3,vw<520?22:34,'rgba(255,228,92,'+fl+')','center','900');
+txt('BRACE FOR BLAST',vw/2,vh*0.3+(vw<520?26:38),vw<520?14:18,'#ffb86b','center','800');
+const bw=Math.min(vw-60,280),bx=vw/2-bw/2,by=vh*0.3+(vw<520?48:68);
+ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(bx,by,bw,8);ctx.fillStyle='#ffe45c';ctx.fillRect(bx,by,bw*e,8);
+}
 S.toasts.forEach((o,i)=>{ctx.globalAlpha=Math.min(1,o.t);txt(o.msg,vw/2,vh*0.12+i*26,18,o.col,'center','800');ctx.globalAlpha=1});
 if(S.phase==='won'&&S.boardRes){
 const wp=S.players.get(S.boardRes.id);
@@ -3481,6 +3504,11 @@ if(S.mode!=='game'||!S.L||!S.me){if(amb.g)amb.g.gain.value=0;if(mus.loops)musUpd
 S.time+=dt;
 ambUpdate(dt);
 musUpdate(dt);
+if(S.rpwT&&S.phase==='play'&&S.L.fin){
+const e=Math.min(1,(performance.now()-S.rpwT)/3000),f=S.L.fin;
+S.shake=Math.max(S.shake,3+e*12);
+for(let i=0;i<2;i++){const a=Math.random()*6.283,d=150+Math.random()*150;part(f.x+Math.cos(a)*d,f.y+Math.sin(a)*d,-Math.cos(a)*d*1.6,-Math.sin(a)*d*1.6,0.6,Math.random()<0.5?'#ffe45c':'#c58bff',2+Math.random()*2)}
+}
 if(S.coopToast&&S.time>=0){S.coopToast=false;if(activeCount()>1&&S.L.st.some((q,i)=>stNeed(i)>1))toast('Numbered panels need that many players at once','#ffd93d')}
 if(S.phase==='boom'){S.parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});S.parts=S.parts.filter(p=>p.life>0);S.shake=Math.max(0,S.shake-dt*20)}
 const me=S.me;
