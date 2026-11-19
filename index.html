@@ -1131,22 +1131,24 @@ S.tut.seen=v&&typeof v==='object'?v:{};
 }catch(e){}
 }
 const SHIP={
-start:{p:2,t:['Hull compromised. Begin repairs.','The ship is falling apart. Please hurry.','Systems failing. Repairs required.']},
-crit:{p:2,t:[n=>'Damaged area '+n+' is critical.',n=>'Damaged area '+n+' is about to rupture.',n=>'Warning. Damaged area '+n+' will not hold.']},
-breach:{p:3,t:['Hull breach detected. Seal it immediately.','Breach. Please do not float toward it.','Hull breach. This is not ideal.']},
-sealed:{p:1,t:['Breach sealed. Well done.','Hull integrity restored.','Breach sealed. Nobody applauded, but I noticed.']},
-bulk:{p:2,t:['Emergency bulkhead engaged. Time lost.','Breach contained by force. Fifteen seconds forfeited.']},
-t60:{p:3,t:['Self destruct in sixty seconds.','One minute to self destruct.']},
-t30:{p:3,t:['Thirty seconds to self destruct.','Self destruct in thirty seconds. Panic is optional.']},
-t10:{p:3,t:['Ten seconds to self destruct.','Ten seconds. It was nice knowing you.']},
-storm:{p:2,t:['Debris storm incoming.','Debris storm approaching. Brace yourselves.','Incoming debris. Try to be somewhere else.']},
-repaired:{p:2,t:['Repairs complete. Reactor online. Collect Astrophage.','All damage repaired. The reactor needs Astrophage.','Hull stable. Gather Astrophage and open the reactor door.']},
-door:{p:2,t:['Reactor door open. Deliver the Astrophage.','Door unlocked. Please bring the Astrophage inside.','Reactor access granted.']},
-power:{p:1,t:[a=>'Reactor power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Astrophage received. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Reactor charging. '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.']},
-lost:{p:2,t:['Crew member lost.','Crew member ejected. Please retrieve.','Someone has left the ship. This was not planned.']},
-win:{p:3,t:['Level complete. Impressive, for crawlers.','Ship restored. Barely.','Reactor powered. We live to fail another day.']},
-boom:{p:3,t:['Self destruct complete. Have you tried not exploding?','Ship destroyed. Better luck next mission.','Blip-A has exploded. This was avoidable.']}
+start:{p:2,t:['Hull is broken. Fix, question? Yes. Fix.','Ship is sad. We make happy. Begin repair.','Systems failing. Words of encouragement. You can do.']},
+crit:{p:2,t:[n=>'Damaged area '+n+' is grumpy. Angry. Will burst.',n=>'Area '+n+' very bad. Fix now, question?',n=>'Warning. Area '+n+' will not hold.']},
+breach:{p:3,t:['Hole in ship. Is bad. Seal hole.','Hull breach. Do not float toward hole. Is not good.','Breach. Seal it. Please do not be stupid.']},
+sealed:{p:1,t:['Hole is gone. Amaze.','Breach sealed. Thank.','Hole sealed. Fist my bump.']},
+bulk:{p:2,t:['Ship closed hole by self. Time lost. Is sad.','Emergency bulkhead used. Fifteen seconds lost.']},
+fixed:{p:1,t:['One area fixed. Amaze.','Good fix. Thank.','Area fixed. Words of great encouragement.','Area repaired. You not stupid today.']},
+t60:{p:3,t:['Sixty seconds. Then boom.','One minute to self destruct. Hurry.']},
+t30:{p:3,t:['Thirty seconds. Hurry hurry hurry.','Thirty seconds to boom. Panic is optional.']},
+t10:{p:3,t:['Ten seconds. I will miss you.','Ten seconds. Is nice knowing you, friend.']},
+storm:{p:2,t:['Space rocks coming. Not friend.','Debris storm incoming. Duck, question?','Rocks approach. Be somewhere else.']},
+repaired:{p:2,t:['All repair done. Amaze. Now get Astrophage.','Hull is stable. Reactor needs Astrophage. Collect.','Repair complete. Gather Astrophage and open reactor door.']},
+door:{p:2,t:['Reactor door open. Bring Astrophage inside.','Door open. Thank for teamwork.','Reactor access granted. Be brave.']},
+power:{p:1,t:[a=>'Reactor eat Astrophage. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Amaze. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Good Astrophage. Reactor at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.']},
+lost:{p:2,t:['Friend is in space. No can die. Retrieve friend.','Crew member lost. You are friend. Come back.','Someone left ship. Is not plan.']},
+win:{p:3,t:['Amaze. Amaze. Amaze.','Power restored. Fist my bump.','Ship fixed. Together we solve. Thank.']},
+boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boom. Is bad. Words of encouragement. Try again.','Blip-A is gone. Rocky sad. We try again.']}
 };
+
 try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true}
 function aiPick(){
 if(S.aiV)return S.aiV;
@@ -1768,9 +1770,9 @@ case 'tb':{(S.pops=S.pops||[]).push({x:m.x,y:m.y,t:performance.now(),s:m.s});S.t
 case 'sd':{
 S.stDone[m.i]=true;S.stProg[m.i]=1;
 const s=S.L.st[m.i],p=S.players.get(m.by);
-burst(s.x,s.y,'#4cd964',30,320,0.9);sfx.done();S.shake=Math.max(S.shake,6);
+burst(s.x,s.y,'#4cd964',30,320,0.9);sfx.done();S.shake=Math.max(S.shake,6);shipSay('fixed');
 toast((p?p.name:'Someone')+' patched damaged area '+(m.i+1)+'/'+S.L.st.length,'#7affc8');
-if(allDone())toast('REACTOR UNLOCKED! Everyone into the ring, each holding a wrench','#c58bff');
+if(allDone())toast('REACTOR UNLOCKED! Collect Astrophage and hold your switches','#c58bff');
 break}
 case 'pk':{
 S.taken.add(m.i);S.pending.delete(m.i);
@@ -1796,7 +1798,7 @@ S.players.forEach(q=>q.ready=false);
 S.phase='won';S.winner=m.id;S.boardRes=m;S.winT=0;
 m.res.forEach(r=>{const p=S.players.get(r.id);if(p){p.score=r.sc;p.rd=r.rd}});
 const wp=S.players.get(m.id);
-if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('SHIP REPAIRED AND POWER RESTORED!!','#ffd93d')}
+if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('POWER HAS BEEN RESTORED!! THANK.','#ffd93d')}
 sfx.win();S.flash=0.6;shipSay('win');
 break}
 case 'boom':{
@@ -2252,7 +2254,7 @@ const m=S.boardRes;if(!m)return;
 const last=m.last;
 const wr=m.res.find(r=>r.id===m.id);
 $('bTitle').textContent=m.boom?'SHIP DESTROYED':last?'MISSION COMPLETE':'LEVEL '+m.lvl+' COMPLETE';
-$('bSub').textContent=m.boom?'Nobody survived. You made it to level '+m.lvl+'. Better luck next mission.':last?(m.res[0].name+' is the top crew member!'):'SHIP REPAIRED AND POWER RESTORED!!';
+$('bSub').textContent=m.boom?'Nobody survived. You made it to level '+m.lvl+'. Better luck next mission.':last?(m.res[0].name+' is the top crew member!'):'POWER HAS BEEN RESTORED!! THANK.';
 const tb=$('bTable');tb.textContent='';
 m.res.forEach((r,i)=>{
 const tr=document.createElement('tr');if(r.id===m.id)tr.className='win';tr.dataset.id=r.id;
@@ -3048,7 +3050,7 @@ S.toasts.forEach((o,i)=>{ctx.globalAlpha=Math.min(1,o.t);txt(o.msg,vw/2,vh*0.12+
 if(S.phase==='won'&&S.boardRes){
 const wp=S.players.get(S.boardRes.id);
 {
-const l1='SHIP REPAIRED AND POWER RESTORED!!';
+const l1='POWER HAS BEEN RESTORED!! THANK.';
 let f=vw<520?26:44;
 ctx.font='900 '+f+'px system-ui,-apple-system,Segoe UI,sans-serif';
 const mw=ctx.measureText(l1).width;
