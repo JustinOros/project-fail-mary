@@ -235,6 +235,14 @@ const b=document.createElement('button');b.className='kb';b.textContent=S[key]?'
 b.onclick=()=>{S[key]=!S[key];try{localStorage.setItem(sk,S[key]?'1':'0')}catch(e){}if(!S.aiVoice&&window.speechSynthesis)try{speechSynthesis.cancel()}catch(e){}renderSettings()};
 r.appendChild(b);box.appendChild(r);
 });
+{
+const r=document.createElement('div');r.className='sr';
+const n=document.createElement('div');n.className='nm';n.textContent='Test ship voice';r.appendChild(n);
+const b=document.createElement('button');b.className='kb';b.textContent='TEST';
+b.onclick=()=>{aiSpeak('Systems check. Amaze.',true);renderSettings();setTimeout(()=>{if(S.setOpen)renderSettings()},1800)};
+r.appendChild(b);box.appendChild(r);
+if(S.aiStatus){const t=document.createElement('div');t.className='sub';t.style.margin='2px 0 8px';t.textContent=(muted?'Sound is muted. ':'')+S.aiStatus;box.appendChild(t)}
+}
 ACTIONS.forEach(([a,name])=>{
 const r=document.createElement('div');r.className='sr';
 const n=document.createElement('div');n.className='nm';n.textContent=name;r.appendChild(n);
@@ -1168,25 +1176,31 @@ return v;
 }
 if(window.speechSynthesis){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{aiPick()}}catch(e){}}
 let aiUtter=null,aiTimer=0;
-function aiSpeak(text){
-if(!S.aiVoice||muted||!window.speechSynthesis)return;
+function aiSpeak(text,force){
+if(!window.speechSynthesis){S.aiStatus='Voice is not supported in this browser';return}
+if(!force&&(!S.aiVoice||muted))return;
 try{
 clearTimeout(aiTimer);
-speechSynthesis.cancel();
-aiTimer=setTimeout(()=>{
+const busy=speechSynthesis.speaking||speechSynthesis.pending;
+if(busy)speechSynthesis.cancel();
+const go=()=>{
 try{
 speechSynthesis.resume();
 const u=new SpeechSynthesisUtterance(text);
-u.rate=0.92;u.pitch=0.55;u.volume=0.9;u.lang='en-US';
+u.rate=0.92;u.pitch=0.55;u.volume=1;u.lang='en-US';
 const v=aiPick();
 if(v){u.voice=v;u.lang=v.lang}
-u.onend=()=>{if(aiUtter===u)aiUtter=null};
-u.onerror=e=>{if(aiUtter===u)aiUtter=null;console.warn('ship voice',e&&e.error)};
+const nm=v?v.name:'default voice';
+S.aiStatus='Asked the browser to speak with '+nm;
+u.onstart=()=>{S.aiStatus='Speaking with '+nm};
+u.onend=()=>{if(aiUtter===u)aiUtter=null;S.aiStatus='Last line played with '+nm};
+u.onerror=e=>{if(aiUtter===u)aiUtter=null;S.aiStatus='Browser error: '+(e&&e.error?e.error:'unknown');console.warn('ship voice',e&&e.error)};
 aiUtter=u;
 speechSynthesis.speak(u);
-}catch(e){}
-},120);
-}catch(e){}
+}catch(e){S.aiStatus='Error: '+e}
+};
+if(busy)aiTimer=setTimeout(go,120);else go();
+}catch(e){S.aiStatus='Error: '+e}
 }
 function shipSay(k,arg){
 const d=SHIP[k];if(!d)return;
