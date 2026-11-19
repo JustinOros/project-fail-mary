@@ -1955,7 +1955,10 @@ function gcCall(kind){
 if(typeof fetch!=='function')return Promise.resolve();
 const ctl=typeof AbortController==='function'?new AbortController():null;
 const to=ctl?setTimeout(()=>ctl.abort(),6000):0;
-return fetch(GC_URL+kind+'/'+GC_KEY,ctl?{signal:ctl.signal}:{}).then(r=>r.ok?r.json():null).then(j=>{clearTimeout(to);if(j&&j.value!==undefined)gcShow(j.value)}).catch(()=>{});
+return fetch(GC_URL+kind+'/'+GC_KEY,ctl?{signal:ctl.signal}:{}).then(r=>{
+if(r.status===404&&kind==='get')return fetch(GC_URL+'create/'+GC_KEY).then(()=>({value:0}));
+return r.ok?r.json():null;
+}).then(j=>{clearTimeout(to);if(j&&j.value!==undefined)gcShow(j.value)}).catch(()=>{});
 }
 function countGame(){gcCall('hit')}
 gcCall('get');
