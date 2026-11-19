@@ -64,7 +64,7 @@ You float in zero gravity, so momentum is everything.
 - Every player has their own 3D printer, which they carry like any item. It is heavy and cannot be dropped or thrown. On Levels 1 and 2 everyone also starts with one wrench.
 - Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, and you can throw it to a friend who needs it.
 - Printing is automatic. Stand in a damaged area circle, a breach, or the reactor ring with gray filament and no wrench, and your printer makes a wrench (2 seconds) which is then used on the repair. Touch a locked door while carrying filament of its color and the keycard is printed and the door opens. Players in the same circle do not print more wrenches than the spot needs.
-- A banner at the bottom tells you what you are missing, for example "You need a wrench to repair this area! Find gray filament." or "You need a Blue key to open this door! Find Blue filament."
+- A banner at the bottom tells you what you are missing, for example "A wrench is required to repair this damage (1 Gray Filament)." or "A Blue keycard is required to open this door (1 Blue Filament)."
 - You can also press E (Y on a controller or phone) to print by hand, for example to make a spare wrench to give a friend. It takes 2 seconds and uses one filament: gray filament makes a wrench, colored filament makes a keycard for the door of the same color. Select a filament slot to choose which one is used.
 - Wrenches can be dropped and passed to friends. Damaged areas, hull breach patches (2 wrenches) and the reactor (one per player) use them up.
 

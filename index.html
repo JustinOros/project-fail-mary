@@ -602,31 +602,32 @@ if(!me||me.spec||me.out)return null;
 const pr=hasPrinter(S.myId),mine=S.items.filter(it=>it.owner===S.myId);
 const gray=mine.some(it=>it.type==='fil'&&it.meta<0),wr=wrenchCount(S.myId);
 const printing=!!S.prs[S.myId];
-const noPrinter='You need your 3D printer to make wrenches. Pick it back up!';
+const noPrinter='Your 3D printer is required to make wrenches. Pick it back up!';
+const wn=n=>n===1?'A wrench is':n+' wrenches are';
 const r=me.rep;
 if(r>=0&&r<1000&&!S.stDone[r]){
 const dm=(S.dmg&&S.dmg[r])||1,have=wrenchesAt(r);
 if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
 if(have>=dm)return{t:'Repairing... '+Math.round(Math.min(1,S.stProg[r]||0)*100)+'%',c:'#7affc8'};
-if(wr>0)return{t:'This area needs '+dm+' wrench'+(dm>1?'es':'')+' ('+have+'/'+dm+'). Bring more!',c:'#ffd93d'};
+if(wr>0)return{t:wn(dm-have)+' still required to repair this damage ('+(dm-have)+' Gray Filament).',c:'#ffd93d'};
 if(!pr)return{t:noPrinter,c:'#ff8a5c'};
-if(!gray)return{t:'You need a wrench to repair this area! Find gray filament.',c:'#ff8a5c'};
+if(!gray)return{t:wn(dm-have)+' required to repair this damage ('+(dm-have)+' Gray Filament).',c:'#ff8a5c'};
 return null;
 }
 if(r===-3&&brLive()){
 const have=wrenchesAt(-3);
 if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
 if(have>=2)return{t:'Patching the breach... '+Math.round(Math.min(1,(S.br&&S.br.prog)||0)*100)+'%',c:'#7affc8'};
-if(wr>0)return{t:'The breach needs 2 wrenches ('+have+'/2). Bring more!',c:'#ffd93d'};
+if(wr>0)return{t:wn(2-have)+' still required to patch the breach ('+(2-have)+' Gray Filament).',c:'#ffd93d'};
 if(!pr)return{t:noPrinter,c:'#ff8a5c'};
-if(!gray)return{t:'You need a wrench to patch this breach! Find gray filament.',c:'#ff8a5c'};
+if(!gray)return{t:wn(2-have)+' required to patch the breach ('+(2-have)+' Gray Filament).',c:'#ff8a5c'};
 return null;
 }
 if(r===-2&&allDone()){
 if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
 if(wr===0){
 if(!pr)return{t:noPrinter,c:'#ff8a5c'};
-if(!gray)return{t:'You need a wrench to start the reactor! Find gray filament.',c:'#ff8a5c'};
+if(!gray)return{t:'A wrench is required to power the reactor (1 Gray Filament).',c:'#ff8a5c'};
 return null;
 }
 const ra=[];S.players.forEach(q=>{if(!q.spec&&!q.out)ra.push(q)});
@@ -641,8 +642,8 @@ if(Math.hypot(me.x-cx,me.y-cy)>R+110)continue;
 const nm=KEYNAME[w.door];
 if(mine.some(it=>it.type==='key'&&it.meta===w.door))return null;
 if(printing)return{t:'Printing a '+nm+' keycard...',c:'#ffd93d'};
-if(!pr)return{t:'You need your 3D printer to make a key. Pick it back up!',c:'#ff8a5c'};
-if(!mine.some(it=>it.type==='fil'&&it.meta===w.door))return{t:'You need a '+nm+' key to open this door! Find '+nm+' filament.',c:KEYCOL[w.door]};
+if(!pr)return{t:'Your 3D printer is required to make a keycard. Pick it back up!',c:'#ff8a5c'};
+if(!mine.some(it=>it.type==='fil'&&it.meta===w.door))return{t:'A '+nm+' keycard is required to open this door (1 '+nm+' Filament).',c:KEYCOL[w.door]};
 return null;
 }
 return null;
