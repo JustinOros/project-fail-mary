@@ -835,7 +835,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 tReset();S.emo={};S.br=null;S.brNext=lvl>=4?20+Math.random()*20:1e9;S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.adSeen=false;S.hintT={};S.aiN=0;S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
+S.adSeen=false;S.hintT={};S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -1151,10 +1151,10 @@ boom:{p:3,t:['Ship exploded. Usually you not stupid. Why stupid, question?','Boo
 
 try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true}
 function aiPick(){
-if(S.aiV)return S.aiV;
 if(!window.speechSynthesis)return null;
 const all=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
 if(!all.length)return null;
+if(S.aiVN){const k=all.find(q=>q.name===S.aiVN);if(k)return k}
 const loc=all.filter(v=>v.localService!==false&&!/google/i.test(v.name));
 const pool=loc.length?loc:all.filter(v=>!/google/i.test(v.name)).length?all.filter(v=>!/google/i.test(v.name)):all;
 let saved='';
@@ -1162,27 +1162,30 @@ try{saved=localStorage.getItem('zg-vname2')||''}catch(e){}
 let v=pool.find(q=>q.name===saved);
 if(!v)for(const n of ['Daniel','Alex','Microsoft David','Microsoft Mark','Microsoft Guy','Fred','Samantha']){v=pool.find(q=>q.name.indexOf(n)>=0);if(v)break}
 if(!v)v=pool[0];
-S.aiV=v;
+S.aiVN=v.name;
 try{localStorage.setItem('zg-vname2',v.name)}catch(e){}
 return v;
 }
 if(window.speechSynthesis){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{aiPick()}}catch(e){}}
+let aiUtter=null,aiTimer=0;
 function aiSpeak(text){
 if(!S.aiVoice||muted||!window.speechSynthesis)return;
 try{
-const busy=speechSynthesis.speaking||speechSynthesis.pending;
-if(busy)speechSynthesis.cancel();
-const go=()=>{
+clearTimeout(aiTimer);
+speechSynthesis.cancel();
+aiTimer=setTimeout(()=>{
 try{
 speechSynthesis.resume();
 const u=new SpeechSynthesisUtterance(text);
 u.rate=0.92;u.pitch=0.55;u.volume=0.9;u.lang='en-US';
 const v=aiPick();
 if(v){u.voice=v;u.lang=v.lang}
+u.onend=()=>{if(aiUtter===u)aiUtter=null};
+u.onerror=e=>{if(aiUtter===u)aiUtter=null;console.warn('ship voice',e&&e.error)};
+aiUtter=u;
 speechSynthesis.speak(u);
 }catch(e){}
-};
-if(busy)setTimeout(go,90);else go();
+},120);
 }catch(e){}
 }
 function shipSay(k,arg){
