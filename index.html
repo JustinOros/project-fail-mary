@@ -2671,6 +2671,26 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
+if(L.n===1&&!me.spec&&t<7){
+const al=t<6?1:Math.max(0,7-t);
+const l1='Oh no?! We need to repair the spaceship!!',l2='Patch every damaged area before the self destruct timer runs out.';
+let f1=vw<520?22:34;
+ctx.font='900 '+f1+'px system-ui,-apple-system,Segoe UI,sans-serif';
+const m1=ctx.measureText(l1).width;
+if(m1>vw-48)f1=Math.floor(f1*(vw-48)/m1);
+let f2=vw<520?13:18;
+ctx.font='700 '+f2+'px system-ui,-apple-system,Segoe UI,sans-serif';
+const m2=ctx.measureText(l2).width;
+if(m2>vw-40){f2=Math.max(9,Math.floor(f2*(vw-40)/m2))}
+ctx.font='700 '+f2+'px system-ui,-apple-system,Segoe UI,sans-serif';
+const w=Math.min(vw-12,Math.max(ctx.measureText(l2).width,Math.min(vw-48,m1))+48);
+const cy=vw<520?vh*0.5:vh*0.64;
+ctx.save();ctx.globalAlpha=al;
+ctx.fillStyle='rgba(8,12,24,.78)';ctx.beginPath();ctx.roundRect(vw/2-w/2,cy-f1-4,w,f1+f2+36,14);ctx.fill();
+txt(l1,vw/2,cy-f1/2+6,f1,'#ff6b6b','center','900');
+txt(l2,vw/2,cy+f2/2+10,f2,'#cfd8ff','center','700');
+ctx.restore();
+}
 if(t>=0&&S.phase==='play'){let np=needPrompt();const mm=S.me;if(!np&&mm&&!mm.spec&&!mm.out&&mm.fuel<=0.01&&!(mm.att&&mm.att.towed))np=mm.att&&!mm.att.pid?{t:'Out of fuel! Aim away from where you want to go, then release to launch off.',c:'#ff8a5c'}:{t:"You're out of fuel! Grab a wall and launch off to get around the ship.",c:'#ff8a5c'};if(np){const fs=vw<520?15:18;ctx.font='900 '+fs+'px system-ui,-apple-system,Segoe UI,sans-serif';const w=Math.min(vw-16,ctx.measureText(np.t).width+36);ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(vw/2-w/2,vh*0.62-20,w,40,10);ctx.fill();txt(np.t,vw/2,vh*0.62,fs,np.c,'center','900')}}
 if(allDone()&&t>=0&&S.phase==='play'){
 const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
