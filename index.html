@@ -123,7 +123,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div class="row"><button id="rejoin" style="display:none">REJOIN</button></div>
 <div id="joinBox"><div class="sub" id="joinPrompt">Enter the lobby code</div><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><div class="row"><button id="joinBack" class="ghost">BACK</button><button id="join" class="go">JOIN</button></div></div>
 <div id="err"></div>
-<div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Stay inside a broken panel's circle with a wrench to repair it. The engineer prints wrenches and keycards from filament with E or Y. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, X drop, Y print, LT share fuel. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
+<div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Stay inside a broken panel's circle with a wrench to repair it. The engineer prints wrenches and keycards from filament with E or Y. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, X drop, Y print by hand, LT share fuel. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
 </div>
 </div>
 
@@ -1086,7 +1086,7 @@ target:()=>tutNearPanel()},
 text:()=>'Stay inside the circle until the bar fills. It repairs by itself. More friends in the circle makes it faster.',
 target:()=>tutNearPanel()},
 {id:'printer',max:16,ok:()=>hasPrinter(S.myId)&&!S.tut.f.printed&&S.time>2,fin:()=>S.tut.f.printed,
-text:()=>'This is your 3D printer. Collect filament, then '+(tc.on?'tap Y':S.tut.usePad?'press Y':'press '+tl('rep'))+' to print. Gray filament makes wrenches, colored filament makes keycards for matching doors.',
+text:()=>'This is your 3D printer. Collect filament. Standing in a soft spot circle with gray filament prints a wrench by itself, and touching a door with matching colored filament prints its keycard.',
 target:()=>null},
 {id:'tool',max:11,ok:()=>!!tutTool(),fin:()=>false,
 text:()=>'You have a wrench. Stand in a soft spot circle to patch it. The number on the spot is how many wrenches it uses up.',
@@ -1231,16 +1231,40 @@ function useWrench(id){
 const w=S.items.find(it=>it.owner===id&&it.type==='tool');
 if(w)S.items=S.items.filter(it=>it!==w);
 }
-function handlePrint(id){
+function handlePrint(id,forced){
 const p=S.players.get(id);
 if(!p||p.spec||p.out||S.pr[id])return;
 if(!hasPrinter(id))return;
 const mine=S.items.filter(it=>it.owner===id&&it.type==='fil');
 if(!mine.length)return;
 const sel=invItem(id,p.sel);
-const f=sel&&sel.type==='fil'?sel:(mine.find(it=>it.meta<0)||mine[0]);
+const f=forced||(sel&&sel.type==='fil'?sel:(mine.find(it=>it.meta<0)||mine[0]));
 S.pr[id]={end:S.time+2,uid:f.uid};
 emit({t:'prs',id,end:S.time+2});
+}
+function hostAutoPrint(){
+const L=S.L;
+S.players.forEach(p=>{
+if(p.spec||p.out||S.pr[p.id]||!hasPrinter(p.id))return;
+for(const w of L.walls){
+if(w.door===undefined||w.open)continue;
+const cx=Math.max(w.x,Math.min(p.x,w.x+w.w)),cy=Math.max(w.y,Math.min(p.y,w.y+w.h));
+if(Math.hypot(p.x-cx,p.y-cy)>R+60)continue;
+if(S.items.some(it=>it.owner===p.id&&it.type==='key'&&it.meta===w.door))continue;
+const f=S.items.find(it=>it.owner===p.id&&it.type==='fil'&&it.meta===w.door);
+if(f){handlePrint(p.id,f);return}
+}
+const gray=S.items.find(it=>it.owner===p.id&&it.type==='fil'&&it.meta<0);
+if(!gray)return;
+const pend=r=>{let c=0;S.players.forEach(q=>{if(q.rep===r&&S.pr[q.id])c++});return c};
+if(p.rep>=0&&p.rep<1000&&!S.stDone[p.rep]){
+if(wrenchesAt(p.rep)+pend(p.rep)<S.dmg[p.rep])handlePrint(p.id,gray);
+}else if(p.rep===-3&&brLive()){
+if(wrenchesAt(-3)+pend(-3)<2)handlePrint(p.id,gray);
+}else if(p.rep===-2&&allDone()){
+if(wrenchCount(p.id)===0)handlePrint(p.id,gray);
+}
+});
 }
 function hostPrints(){
 for(const id in S.pr){
@@ -1344,6 +1368,7 @@ emit({t:'boom',res,lvl:S.lvl});
 return;
 }
 hostPrints();
+hostAutoPrint();
 hostSoft();
 const wc={};
 for(const p of S.players.values())if(p.rep>=0&&p.rep<1000&&!p.spec&&!p.out)wc[p.rep]=(wc[p.rep]||0)+wrenchCount(p.id);
@@ -2520,7 +2545,7 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
-if(t>=0&&S.phase==='play'&&S.me.rep>=0&&S.me.rep<1000&&!S.stDone[S.me.rep]&&!holdsTool(S.myId))txt('NEED A WRENCH: print one on your 3D printer',vw/2,vh*0.62,20,'#ff8a5c','center','900');
+if(t>=0&&S.phase==='play'&&S.me.rep>=0&&S.me.rep<1000&&!S.stDone[S.me.rep]&&!holdsTool(S.myId)&&!S.prs[S.myId])txt('NEED GRAY FILAMENT TO PRINT A WRENCH',vw/2,vh*0.62,20,'#ff8a5c','center','900');
 if(allDone()&&t>=0&&S.phase==='play'){
 const ra=[];S.players.forEach(p=>{if(!p.spec&&!p.out)ra.push(p)});
 const ri=ra.filter(p=>p.rep===-2),rw=ri.filter(p=>wrenchCount(p.id)>0).length;
