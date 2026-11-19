@@ -58,7 +58,7 @@ You float in zero gravity, so momentum is everything.
 ## Inventory and tools
 
 - The row of slots at the bottom of the screen is your inventory. New items go into the first free slot.
-- Select a slot with the number keys 1 to 9, the mouse wheel, a click, or left and right on the D-pad. The selected item is equipped and shown in your crawler's hand.
+- Select a slot with the number keys 1 to 9, the mouse wheel, a click, or LT and RT or left and right on the D-pad. The selected item is equipped and shown in your crawler's hand.
 - Drop the selected item with Q, right click on a slot, or X on a controller. Dropped items float away, and anyone can pick them up by touching them. You cannot pick your own drop back up for about a second and a half.
 - Wrenches and the printer are heavy. Every heavy item you carry makes your thrusters weaker, lowers your top speed, weakens your push off, and burns fuel faster. Throwing items is a quick way to pass them to friends.
 
@@ -72,7 +72,7 @@ You float in zero gravity, so momentum is everything.
 - When your fuel is low and you carry an Astrophage, a button appears above your inventory. Tap or click it to burn 1 Astrophage for a full tank in one step.
 - The print menu can also make a Flashlight and Gravity Boots, 2 gray filament each. They are never printed automatically, so you have to open the menu. You can hold one of each at a time. Select the item in your inventory to use it; a newly printed one is selected for you.
 - Flashlight: when loose Astrophage is nearby, it selects itself, lights up the area and pulls the Astrophage toward you so it is easy to collect. You can still select another item and it stays off until Astrophage comes into range again.
-- Gravity Boots: they work as long as you carry them, with no need to select them. Five small boots show on your feet. Drop them to take them off. When you are close to a wall they pull you onto it and you can walk along it by holding Thrust in the direction you want to go. Hold Grab and release to jump off and fly. They have no fuel limit for now.
+- Gravity Boots: they work as long as you carry them, with no need to select them. Five small boots show on your feet. Drop them to take them off. When you are close to a wall they pull you onto it and you can walk along it by pushing the stick, arrow keys or phone stick in the direction you want to go. You do not need to hold Thrust. Hold Grab and release to jump off and fly. They have no fuel limit for now.
 - Wrenches can be dropped and passed to friends. Damaged areas and hull breach patches (2 wrenches) use them up.
 
 ## Colored doors and keycards
@@ -103,8 +103,8 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | --- | --- | --- |
 | Aim | Mouse, WASD or arrow keys | Left stick |
 | Grab and push off | Space or left click | A or LB |
-| Thrusters | Shift or right click | RT, RB or B |
-| Select inventory slot | 1 to 9 or mouse wheel | D-pad left and right |
+| Thrusters | Shift or right click | RB or B |
+| Select inventory slot | 1 to 9 or mouse wheel | LT and RT, or D-pad left and right |
 | Drop item | Q or right click a slot | X |
 | Print on 3D printer | E or F | Y |
 | Chat | Enter | Select or View |

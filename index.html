@@ -1011,7 +1011,7 @@ if(vh>vw&&!S.pm)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,
 function typing(){return S.chatOpen||!$('osk').classList.contains('hidden')}
 function readInput(){
 const me=S.me;
-if(typing()||S.emoOpen)return{grab:false,thr:false,rep:false,ax:Math.cos(me.ang),ay:Math.sin(me.ang)};
+if(typing()||S.emoOpen)return{grab:false,thr:false,rep:false,mv:false,ax:Math.cos(me.ang),ay:Math.sin(me.ang)};
 let ax=0,ay=0;
 if(dn('left'))ax-=1;
 if(dn('right'))ax+=1;
@@ -1023,14 +1023,14 @@ const gp=pad();
 if(gp){
 gx=gp.axes[0]||0;gy=gp.axes[1]||0;
 if(Math.hypot(gx,gy)<0.3){gx=0;gy=0}
-grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,7)||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);
+grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);
 }
 if(tc.on){grab=grab||tc.btn.grab;thr=thr||tc.btn.thr;rep=rep||tc.btn.rep}
-let dx,dy;
-if(ax||ay){dx=ax;dy=ay}
-else if(gx||gy){dx=gx;dy=gy}
+let dx,dy,mv=false;
+if(ax||ay){dx=ax;dy=ay;mv=true}
+else if(gx||gy){dx=gx;dy=gy;mv=true}
 else if(tc.on){
-if(tc.act&&Math.hypot(tc.vx,tc.vy)>0.2){dx=tc.vx;dy=tc.vy}
+if(tc.act&&Math.hypot(tc.vx,tc.vy)>0.2){dx=tc.vx;dy=tc.vy;mv=true}
 else{dx=Math.cos(me.ang);dy=Math.sin(me.ang)}
 }
 else{
@@ -1040,7 +1040,7 @@ dx=mouse.x-sx;dy=mouse.y-sy;
 if(Math.hypot(dx,dy)<14){dx=Math.cos(me.ang);dy=Math.sin(me.ang)}
 }
 const l=Math.hypot(dx,dy)||1;
-return{grab,thr,rep,ax:dx/l,ay:dy/l};
+return{grab,thr,rep,mv,ax:dx/l,ay:dy/l};
 }
 
 function setupRound(lvl,seed){
@@ -1137,7 +1137,7 @@ else if(grab){me.charge=Math.min(1,me.charge+dt/0.9);if(me.att.boot)me.att.ch=tr
 else if(me.att.boot&&!me.att.ch){
 const a=me.att;
 {
-if(inp.thr){
+if(inp.thr||inp.mv){
 const tx=-a.ny,ty=a.nx,pj=inp.ax*tx+inp.ay*ty;
 if(Math.abs(pj)>0.2){
 const sg=pj>0?1:-1;
@@ -3809,7 +3809,8 @@ if(!gp)return;
 const l=layerEl(),now=performance.now();
 const btn=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed);
 const ax=gp.axes[0]||0,ay=gp.axes[1]||0;
-const st={up:btn(12)||ay<-0.6,down:btn(13)||ay>0.6,left:btn(14)||ax<-0.6,right:btn(15)||ax>0.6,a:btn(0),b:btn(1),y:btn(3),x:btn(2),start:btn(9),select:btn(8)};
+const stk=!(S.mode==='game'&&S.me&&!l);
+const st={up:btn(12)||(stk&&ay<-0.6),down:btn(13)||(stk&&ay>0.6),left:btn(14)||btn(6)||(stk&&ax<-0.6),right:btn(15)||btn(7)||(stk&&ax>0.6),a:btn(0),b:btn(1),y:btn(3),x:btn(2),start:btn(9),select:btn(8)};
 const fire=[];
 for(const k in st){
 if(st[k]){
@@ -3842,7 +3843,8 @@ fire.forEach(k=>{
 if(S.pm){
 const n=printRows().length;
 if(k==='up')S.pmSel=((S.pmSel||0)+n-1)%n;
-else if(k==='down')S.pmSel=((S.pmSel||0)+1)%n;
+else if(k==='down'||k==='right')S.pmSel=((S.pmSel||0)+1)%n;
+else if(k==='left')S.pmSel=((S.pmSel||0)+n-1)%n;
 else if(k==='a')pmChoose(S.pmSel||0);
 else if(k==='b')pmOpen(false);
 else if(k==='y')doPrint();
