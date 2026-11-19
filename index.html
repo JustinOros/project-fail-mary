@@ -121,7 +121,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div class="row"><button id="rejoin" style="display:none">REJOIN</button></div>
 <div class="row"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button id="join">JOIN LOBBY</button></div>
 <div id="err"></div>
-<div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Hold the repair key near a broken panel. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, Y repair, X drop, LT share fuel. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
+<div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Stay inside a broken panel's circle to repair it. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, X drop, LT share fuel. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
 </div>
 </div>
 
@@ -197,7 +197,7 @@ const KEYNAME=['Red','Blue','Green','Yellow','Purple'];
 function rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+a+')'}
 function itemName(it){return it.type==='key'?KEYNAME[it.meta]+' Key':it.type==='tool'?'Repair Tool #'+(it.meta+1):(ITEMS[it.type]||{name:'Item'}).name}
 const keys={};
-const ACTIONS=[['up','Aim up'],['down','Aim down'],['left','Aim left'],['right','Aim right'],['grab','Grab / push off'],['thrust','Thrusters'],['repair','Repair'],['give','Share fuel'],['drop','Drop item'],['mute','Mute']];
+const ACTIONS=[['up','Aim up'],['down','Aim down'],['left','Aim left'],['right','Aim right'],['grab','Grab / push off'],['thrust','Thrusters'],['give','Share fuel'],['drop','Drop item'],['mute','Mute']];
 const DEFAULTS={up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],grab:['Space',''],thrust:['ShiftLeft','ShiftRight'],repair:['KeyE','KeyF'],give:['KeyG',''],drop:['KeyQ',''],mute:['KeyM','']};
 function loadBindings(){const d=JSON.parse(JSON.stringify(DEFAULTS));try{const q=JSON.parse(localStorage.getItem('dw-keys')||'null');if(q)for(const k in d)if(Array.isArray(q[k])&&q[k].length===2)d[k]=q[k]}catch(e){}return d}
 let B=loadBindings();
@@ -599,7 +599,6 @@ const r=36*ts,d=60*ts,cx=vw-14*ts-d-r,cy=H-12*ts-d-r;
 return{ts,H,right:cx-d-r-10*ts,btns:[
 {k:'grab',x:cx,y:cy+d,r,label:'A',cap:'GRAB',col:'#4cd964',hold:true},
 {k:'thr',x:cx+d,y:cy,r,label:'B',cap:'THRUST',col:'#ff4d4d',hold:true},
-{k:'rep',x:cx,y:cy-d,r,label:'Y',cap:'REPAIR',col:'#ffd93d',hold:true},
 {k:'drop',x:cx-d,y:cy,r,label:'X',cap:'DROP',col:'#4da3ff',hold:false},
 {k:'give',x:cx-d*1.25,y:cy-d*1.3,r:26*ts,label:'LT',cap:'SHARE',col:'#b57bff',hold:true}
 ]};
@@ -915,7 +914,7 @@ me.fuel-=amt;me.giveAcc=(me.giveAcc||0)+amt;me.giveTo=gv.id;
 if(Math.random()<0.6){const k=Math.random();part(me.x+(gv.x-me.x)*k,me.y+(gv.y-me.y)*k,0,0,0.4,'#4da3ff',3)}
 }
 if(me.giveAcc>0&&(!gv||me.giveAcc>=0.03)){sendGift(me.giveTo,me.giveAcc);me.giveAcc=0}
-if(can&&inp.rep){
+if(can){
 let best=-1,bd=1e9;
 L.st.forEach((s,i)=>{if(S.stDone[i])return;const d=Math.hypot(me.x-s.x,me.y-s.y);if(d<s.r+RR&&d<bd){bd=d;best=i}});
 if(best>=0)me.rep=best;
@@ -923,8 +922,16 @@ else if(brLive()&&Math.hypot(me.x-S.br.x,me.y-S.br.y)<S.br.r+RR&&holdsTool(S.myI
 else if(allDone()&&Math.hypot(me.x-L.fin.x,me.y-L.fin.y)<L.fin.r+RR)me.rep=-2;
 }
 const prev=me.holdId===undefined?-1:me.holdId;
-if(prev!==-1&&me.rep!==prev&&!(prev>=0&&prev<1000&&S.stDone[prev])&&!(prev>=1000&&S.fTaken.has(prev-1000)))reportLost(prev);
-me.holdId=me.rep;
+const resettable=prev!==-1&&!(prev>=0&&prev<1000&&S.stDone[prev])&&!(prev>=1000&&S.fTaken.has(prev-1000));
+if(me.rep===-1){
+if(resettable){
+me.graceT=(me.graceT||0)+dt;
+if(me.graceT>=1){reportLost(prev);me.holdId=-1;me.graceT=0}
+}else{me.holdId=-1;me.graceT=0}
+}else{
+if(resettable&&me.rep!==prev)reportLost(prev);
+me.holdId=me.rep;me.graceT=0;
+}
 }
 if(me.rep!==-1){
 S.tickT-=dt;
@@ -1051,7 +1058,7 @@ target:()=>null},
 text:()=>'Fix every red panel before the self destruct timer runs out. Fly to the nearest one.',
 target:()=>tutNearPanel()},
 {id:'repair',max:18,ok:()=>!!tutInRing()&&!allDone(),fin:()=>S.stDone.some(Boolean),
-text:()=>'Hold '+tl('rep')+' and stay inside the circle until the bar fills. More friends in the circle makes it faster.',
+text:()=>'Stay inside the circle until the bar fills. It repairs by itself. More friends in the circle makes it faster.',
 target:()=>tutNearPanel()},
 {id:'tool',max:11,ok:()=>!!tutTool(),fin:()=>false,
 text:()=>'You got a Repair Tool. The final repair needs every tool inside the reactor ring. Tools are heavy, so hand them off or drop them near the reactor.',
@@ -1066,7 +1073,7 @@ target:()=>{const k=tutKey(),w=k&&S.L.walls.find(q=>q.door===k.meta&&!q.open);re
 text:()=>'Fly into stars for bonus points.',
 target:()=>tutNearStar()},
 {id:'final',max:30,urgent:true,ok:()=>allDone(),fin:()=>false,
-text:()=>'All panels fixed! Bring every tool into the glowing reactor ring, then hold '+tl('rep')+' together.',
+text:()=>'All panels fixed! Bring every tool into the glowing reactor ring, then stay inside it together.',
 target:()=>({x:S.L.fin.x,y:S.L.fin.y,r:S.L.fin.r,d:Math.hypot(S.me.x-S.L.fin.x,S.me.y-S.L.fin.y)})},
 {id:'hurry',max:7,urgent:true,ok:()=>S.L.limit-S.time<30&&!allDone(),fin:()=>false,
 text:()=>'Hurry! The ship self destructs in under 30 seconds.',
@@ -1447,7 +1454,7 @@ break}
 case 'brs':{
 S.br={x:m.x,y:m.y,rx:m.rx,ry:m.ry,we:m.we,dl:m.dl,prog:0,r:26};
 S.flash=0.5;S.shake=Math.max(S.shake,10);
-toast('HULL BREACH! Hold a tool at the hole and repair to patch it','#ff9f1a');
+toast('HULL BREACH! Carry a tool next to the hole to patch it','#ff9f1a');
 [0,1,2,3].forEach(i=>tone(i%2?620:880,0.16,'square',0.07,1,i*0.18));
 break}
 case 'bre':{
@@ -2082,7 +2089,7 @@ ctx.font='24px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillT
 continue;
 }
 if(w.hull)ctx.fillStyle='#232e4a';
-else if(w.slick){const g=ctx.createLinearGradient(w.x,w.y,w.x+w.w,w.y+w.h);const o=(t*0.3)%1;g.addColorStop(0,'#143a2c');g.addColorStop(Math.min(1,o),'#2b6a8a');g.addColorStop(1,'#3a1a55');ctx.fillStyle=g}
+else if(w.slick){const g=ctx.createLinearGradient(w.x,w.y,w.x+w.w,w.y+w.h);const o=(((t*0.3)%1)+1)%1;g.addColorStop(0,'#143a2c');g.addColorStop(Math.min(1,o),'#2b6a8a');g.addColorStop(1,'#3a1a55');ctx.fillStyle=g}
 else if(w.w<=40||w.h<=40)ctx.fillStyle='#34456a';
 else ctx.fillStyle='#5b4a2c';
 ctx.fillRect(w.x,w.y,w.w,w.h);
@@ -2261,7 +2268,7 @@ for(let i=0;i<4;i++){const a=t*5+i*1.57;ctx.beginPath();ctx.arc(0,0,b.r*0.55,a,a
 }
 if(b.prog>0){ctx.strokeStyle='#4cd964';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,b.r+10,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,b.prog));ctx.stroke()}
 const me=S.me,near=me&&Math.hypot(me.x-b.x,me.y-b.y)<b.r+RR+90;
-const lab=!live?'HULL BREACH INCOMING':near&&!holdsTool(S.myId)?'NEED A TOOL TO PATCH':near?'HOLD REPAIR':'HULL BREACH';
+const lab=!live?'HULL BREACH INCOMING':near&&!holdsTool(S.myId)?'NEED A TOOL TO PATCH':near?'PATCHING':'HULL BREACH';
 const ly=b.y<S.L.h/2?60:-60;
 txt(lab,0,ly,14,'#ffb347','center','900');
 ctx.restore();
@@ -2390,7 +2397,7 @@ txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 if(allDone()&&t>=0&&S.phase==='play'){
 const ts=toolStatus();
 if(ts.missing.length)txt('TOOLS MISSING FROM REACTOR RING: '+ts.missing.join(', '),vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#ff8a5c','center','900');
-else txt('ALL TOOLS IN PLACE. HOLD REPAIR',vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#7affc8','center','900');
+else txt('ALL TOOLS IN PLACE. STAY IN THE RING',vw/2,vh*0.2+(S.tut.on&&S.tut.cur?64:0),20,'#7affc8','center','900');
 }
 if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);
@@ -2481,7 +2488,7 @@ else if(S.phase==='boom'){S.winT+=dt;if(S.winT>3.4){S.phase='board';showBoard()}
 let codeChipState='none',emoBtnState='none',chatBtnState='none',specBarState='none',specNameState='';
 function frame(ts){
 const dt=Math.min(0.05,(ts-lastT)/1000||0.016);lastT=ts;
-navPoll();tick(dt);draw();
+try{navPoll();tick(dt);draw()}catch(err){console.error(err)}
 const cbv=S.mode==='menu'||S.setOpen?'none':'block';
 if(cbv!==chatBtnState){chatBtnState=cbv;$('chatBtn').style.display=cbv}
 const cc=S.mode==='game'&&!S.solo&&S.code&&!S.setOpen?'flex':'none';

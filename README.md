@@ -42,7 +42,7 @@ You float in zero gravity, so momentum is everything.
 - Hold **grab** next to a wall to stick to it. Fly into a friend while holding grab and you cling to them and ride along as they move. Release to push off them. You cannot grab someone who is already riding another player.
 - Release grab to push off toward where you are aiming. Holding grab longer before releasing gives a harder push.
 - Thrusters give you extra control, but fuel is limited and does not refill on its own.
-- Hold **repair** inside the dashed ring around a panel to work on it. Letting go, drifting out of the ring, or getting stunned resets the progress back to zero.
+- Repairs start by themselves while you are inside the dashed ring around a panel. No button is needed. If you leave the ring for more than 1 second, or get stunned, the progress resets back to zero.
 - Fuel boxes refill half a tank. Just fly into one. A box is ignored while your tank is almost full, so it stays for someone who needs it.
 - You can share your own fuel with a nearby friend by holding **share fuel** next to them.
 - Crawlers bump into each other, so you can knock a friend off a panel.
@@ -85,7 +85,6 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | Aim | Mouse, WASD or arrow keys | Left stick |
 | Grab and push off | Space or left click | A or LB |
 | Thrusters | Shift or right click | RT, RB or B |
-| Repair and capture | E or F | Y |
 | Share fuel | G | LT |
 | Select inventory slot | 1 to 9 or mouse wheel | D-pad left and right |
 | Drop item | Q or right click a slot | X |
@@ -101,7 +100,7 @@ In menus on a controller, use the D-pad or stick to move, A to select, B to go b
 Touch controls appear automatically on a touchscreen. Landscape gives the widest view, and the game adjusts when you rotate your phone.
 
 - Drag anywhere on the left side of the screen to aim. Release to keep your last heading.
-- The buttons on the right copy an Xbox controller: A grabs, B thrusts, Y repairs and X drops the selected item. LT shares fuel. Hold them like the keyboard keys.
+- The buttons on the right copy an Xbox controller: A grabs, B thrusts and X drops the selected item. LT shares fuel. Hold them like the keyboard keys.
 - Tap a slot in the bottom bar to select an item.
 - Tap the chat bubble next to the cog to type a message. Your phone keyboard pops up.
 
@@ -148,4 +147,4 @@ The lobby code appears at the top of the screen during a round. Any player can t
 
 ## Hull breach events
 
-From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Carry a repair tool (keys do not count) to the hole and hold the repair key for about 3 seconds to patch it; more players patch faster, and the tool is not used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.
+From Level 4 on, a hull breach can open at a random spot. After a 2 second alarm it pulls in nearby players and loose items. Grab a wall to resist the pull. Carry a repair tool (keys do not count) to the hole and stay next to the hole for about 3 seconds to patch it; more players patch faster, and the tool is not used up. If nobody patches it within 30 seconds, an emergency bulkhead seals it and the self destruct timer loses 15 seconds. A player pulled into the hole is lost in space for 3 seconds, drops what they carry at their respawn point, and comes back with 40 percent fuel. Loose items pulled in reappear in the middle of the room, so nothing is ever lost.
