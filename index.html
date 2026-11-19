@@ -1045,7 +1045,7 @@ return{grab,thr,rep,mv,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 tReset();S.emo={};S.br=null;S.brNext=lvl>=4?20+Math.random()*20:1e9;S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.adSeen=false;S.rpwT=0;S.hintT={};S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
+S.adSeen=false;S.rpwT=0;S.players.forEach(q=>{q.celeb=false});S.hintT={};S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -2256,6 +2256,7 @@ sfx.win();S.flash=0.6;shipSay('win');
 {
 const rd=S.L&&S.L.rd,me=S.me;
 if(rd){
+S.players.forEach(q=>{q.celeb=!q.dead&&!q.spec&&!q.out&&Math.hypot(q.x-rd.x,q.y-rd.y0)<rd.half+10&&(q.y-rd.y0)*rd.sgn>-30});
 burst(rd.x,rd.y0+rd.sgn*40,'#ffe45c',70,560,1.1);burst(rd.x,rd.y0+rd.sgn*40,'#c58bff',40,420,1);
 if(me&&!me.spec&&!me.out&&!me.dead){
 const dx=me.x-rd.x,dy=me.y-rd.y0;
@@ -2959,7 +2960,7 @@ function shade(h,f){const n=parseInt(h.slice(1),16);const c=v=>Math.max(0,Math.m
 function drawPlayer(p,isMe){
 const col=p.dead?'#8a91ab':COLORS[p.color%8];
 const bootsOn=!p.dead&&p.id!==undefined&&hasItemType(p.id,'boots'),lampOn=!p.dead&&equipped(p,'flash');
-const rdz=S.L&&S.L.rd,dancing=!!(S.rpwT&&S.phase==='play'&&rdz&&!p.dead&&!p.spec&&!p.out&&Math.hypot(p.x-rdz.x,p.y-rdz.y0)<rdz.half+10&&(p.y-rdz.y0)*rdz.sgn>-30);
+const rdz=S.L&&S.L.rd,dancing=!!((S.rpwT&&S.phase==='play'&&rdz&&!p.dead&&!p.spec&&!p.out&&Math.hypot(p.x-rdz.x,p.y-rdz.y0)<rdz.half+10&&(p.y-rdz.y0)*rdz.sgn>-30)||(p.celeb&&S.phase==='won'&&!p.dead));
 const dt0=performance.now()/1000+p.color*0.7;
 ctx.save();ctx.translate(p.x,p.y);
 if(lampOn){
