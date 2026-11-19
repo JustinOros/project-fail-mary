@@ -765,7 +765,7 @@ return{ax:dx/d*f,ay:dy/d*f,d};
 }
 function brSpawn(at){
 const L=S.L;
-let best=at?{x:at.x,y:at.y,rx:at.x,ry:L.h/2}:null;
+let best=at?{x:at.x,y:at.y,rx:at.x,ry:L.h/2,si:at.si}:null;
 for(let t=0;t<14&&!best;t++){
 const room=L.rooms[Math.floor(Math.random()*L.rooms.length)];
 const top=Math.random()<0.5;
@@ -775,12 +775,13 @@ if(top===L.fin.top&&Math.abs(x-L.fin.x)<L.rd.half+100)continue;
 best={x,y,rx:(room.x0+room.x1)/2,ry:L.h/2};break;
 }
 if(!best){const room=L.rooms[0];best={x:(room.x0+room.x1)/2,y:L.T+14,rx:(room.x0+room.x1)/2,ry:L.h/2}}
-emit({t:'brs',x:best.x,y:best.y,rx:best.rx,ry:best.ry,we:S.time+BR_WARN,dl:S.time+BR_WARN+BR_LIFE});
+emit({t:'brs',si:best.si,x:best.x,y:best.y,rx:best.rx,ry:best.ry,we:S.time+BR_WARN,dl:S.time+BR_WARN+BR_LIFE});
 }
 function brEnd(why,by){
 S.brNext=S.time+35+Math.random()*35;
 if(why==='timeout')S.time+=BR_PEN;
 if(why==='patched'&&S.br)hostBonus(5,S.br.x,S.br.y);
+if(why==='patched'&&S.br&&S.br.si!==undefined&&S.br.si!==null&&!S.stDone[S.br.si])emit({t:'sd',i:S.br.si,by,ids:[]});
 if(why==='patched'){const ids=[...S.players.values()].filter(p=>p.rep===-3&&!p.spec&&!p.out&&!p.dead).map(p=>p.id);payWrenches(ids,2)}
 emit({t:'bre',why,by});
 }
@@ -1623,7 +1624,7 @@ else{
 S.dmg[i]=1;S.dmgT[i]=S.time+60;S.stProg[i]=0;S.contrib[i]={};
 const q=L.st[i];
 emit({t:'dgb',i});
-brSpawn({x:q.x,y:q.top?L.T+14:L.h-L.T-14});
+brSpawn({x:q.x,y:q.top?L.T+14:L.h-L.T-14,si:i});
 }
 });
 }
@@ -2217,7 +2218,7 @@ case 'tk':{
 if(m.id===S.myId){if(m.type==='astro')sfx.shimmer();else sfx.star();toast('Picked up '+itemName({type:m.type,meta:m.meta}),'#ffd93d')}
 break}
 case 'brs':{
-S.br={x:m.x,y:m.y,rx:m.rx,ry:m.ry,we:m.we,dl:m.dl,prog:0,r:26};
+S.br={x:m.x,y:m.y,rx:m.rx,ry:m.ry,we:m.we,dl:m.dl,prog:0,r:26,si:m.si};
 S.flash=0.5;S.shake=Math.max(S.shake,10);
 toast('HULL BREACH! Stay at the hole holding 2 wrenches','#ff9f1a');shipSay('breach');
 [0,1,2,3].forEach(i=>tone(i%2?620:880,0.16,'square',0.07,1,i*0.18,'w'));sfx.whoosh();tone(62,0.9,'sawtooth',0.08,0.5);
@@ -2980,7 +2981,7 @@ const done=S.stDone[i],pr=S.stProg[i]||0,blink=Math.sin(t*6)>0;
 ctx.save();ctx.translate(s.x,s.y);
 drawCracks(s,i,done,pr);
 const g=ctx.createRadialGradient(0,0,6,0,0,70);g.addColorStop(0,done?'rgba(76,217,100,.35)':blink?'rgba(255,80,80,.35)':'rgba(255,80,80,.12)');g.addColorStop(1,'rgba(0,0,0,0)');
-ctx.fillStyle=g;ctx.fillRect(-80,-80,160,160);
+if(!done){ctx.fillStyle=g;ctx.fillRect(-80,-80,160,160)}
 if(!done){ctx.strokeStyle='rgba(122,255,200,.3)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.beginPath();ctx.arc(0,0,s.r+RR,0,6.3);ctx.stroke();ctx.setLineDash([])}
 const hs=S.hintT||(S.hintT={}),mm=S.me;
 if(!done&&mm&&!mm.spec&&!mm.out){
@@ -2990,8 +2991,8 @@ else if(dme>520)delete hs[i];
 }
 let ha=0;
 if(!done&&hs[i]!==undefined){const e=(performance.now()-hs[i])/1000;if(e<1.6)ha=(e%0.8)<0.4?1:0}
-if(done||ha){
-ctx.save();ctx.globalAlpha=done?1:ha;
+if(!done&&ha){
+ctx.save();ctx.globalAlpha=ha;
 ctx.fillStyle='#1a2340';ctx.strokeStyle=done?'#4cd964':'#ff6b6b';ctx.lineWidth=3;
 ctx.beginPath();ctx.roundRect(-40,-24,80,48,10);ctx.fill();ctx.stroke();
 ctx.font='26px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(done?'✅':'🔧',0,2);
