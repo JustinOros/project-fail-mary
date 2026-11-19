@@ -1137,15 +1137,29 @@ win:{p:3,t:['Level complete. Impressive, for crawlers.','Ship restored. Barely.'
 boom:{p:3,t:['Self destruct complete. Have you tried not exploding?','Ship destroyed. Better luck next mission.','Blip-A has exploded. This was avoidable.']}
 };
 try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true}
+function aiPick(){
+if(S.aiV)return S.aiV;
+if(!window.speechSynthesis)return null;
+const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
+if(!vs.length)return null;
+let saved='';
+try{saved=localStorage.getItem('zg-vname')||''}catch(e){}
+let v=vs.find(q=>q.name===saved);
+if(!v)for(const n of ['Google US English','Microsoft David','Microsoft Mark','Microsoft Guy','Daniel','Alex']){v=vs.find(q=>q.name.indexOf(n)>=0);if(v)break}
+if(!v)v=vs[0];
+S.aiV=v;
+try{localStorage.setItem('zg-vname',v.name)}catch(e){}
+return v;
+}
+if(window.speechSynthesis){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{aiPick()}}catch(e){}}
 function aiSpeak(text){
 if(!S.aiVoice||muted||!window.speechSynthesis)return;
 try{
 speechSynthesis.cancel();
 const u=new SpeechSynthesisUtterance(text);
-u.rate=0.92;u.pitch=0.55;u.volume=0.9;
-const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
-const v=vs.find(q=>/Google US English|David|Mark|Guy|Daniel|Alex/i.test(q.name))||vs[0];
-if(v)u.voice=v;
+u.rate=0.92;u.pitch=0.55;u.volume=0.9;u.lang='en-US';
+const v=aiPick();
+if(v){u.voice=v;u.lang=v.lang}
 speechSynthesis.speak(u);
 }catch(e){}
 }
@@ -1761,7 +1775,7 @@ S.players.forEach(q=>q.ready=false);
 S.phase='won';S.winner=m.id;S.boardRes=m;S.winT=0;
 m.res.forEach(r=>{const p=S.players.get(r.id);if(p){p.score=r.sc;p.rd=r.rd}});
 const wp=S.players.get(m.id);
-if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('You repaired this level of the ship and restored power to its reactor!','#ffd93d')}
+if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('SHIP REPAIRED AND POWER RESTORED!!','#ffd93d')}
 sfx.win();S.flash=0.6;shipSay('win');
 break}
 case 'boom':{
@@ -2217,7 +2231,7 @@ const m=S.boardRes;if(!m)return;
 const last=m.last;
 const wr=m.res.find(r=>r.id===m.id);
 $('bTitle').textContent=m.boom?'SHIP DESTROYED':last?'MISSION COMPLETE':'LEVEL '+m.lvl+' COMPLETE';
-$('bSub').textContent=m.boom?'Nobody survived. You made it to level '+m.lvl+'. Better luck next mission.':last?(m.res[0].name+' is the top crew member!'):'You repaired this level of the ship and restored power to its reactor!';
+$('bSub').textContent=m.boom?'Nobody survived. You made it to level '+m.lvl+'. Better luck next mission.':last?(m.res[0].name+' is the top crew member!'):'SHIP REPAIRED AND POWER RESTORED!!';
 const tb=$('bTable');tb.textContent='';
 m.res.forEach((r,i)=>{
 const tr=document.createElement('tr');if(r.id===m.id)tr.className='win';tr.dataset.id=r.id;
@@ -3013,13 +3027,12 @@ S.toasts.forEach((o,i)=>{ctx.globalAlpha=Math.min(1,o.t);txt(o.msg,vw/2,vh*0.12+
 if(S.phase==='won'&&S.boardRes){
 const wp=S.players.get(S.boardRes.id);
 {
-const l1='YOU REPAIRED THIS LEVEL OF THE SHIP',l2='AND RESTORED POWER TO ITS REACTOR!';
-let f=vw<520?22:40;
+const l1='SHIP REPAIRED AND POWER RESTORED!!';
+let f=vw<520?26:44;
 ctx.font='900 '+f+'px system-ui,-apple-system,Segoe UI,sans-serif';
-const mw=Math.max(ctx.measureText(l1).width,ctx.measureText(l2).width);
+const mw=ctx.measureText(l1).width;
 if(mw>vw-32)f=Math.floor(f*(vw-32)/mw);
-txt(l1,vw/2,vh*0.35-f*0.65,f,'#ffd93d','center','900');
-txt(l2,vw/2,vh*0.35+f*0.65,f,'#ffd93d','center','900');
+txt(l1,vw/2,vh*0.35,f,'#ffd93d','center','900');
 }
 }
 if(S.phase==='boom'){
