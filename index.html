@@ -561,6 +561,7 @@ emit({t:'brs',x:best.x,y:best.y,rx:best.rx,ry:best.ry,we:S.time+BR_WARN,dl:S.tim
 function brEnd(why,by){
 S.brNext=S.time+35+Math.random()*35;
 if(why==='timeout')S.time+=BR_PEN;
+if(why==='patched'&&S.br)hostBonus(5,S.br.x,S.br.y);
 if(why==='patched'){const ids=[...S.players.values()].filter(p=>p.rep===-3&&!p.spec&&!p.out).map(p=>p.id);payWrenches(ids,2)}
 emit({t:'bre',why,by});
 }
@@ -1278,8 +1279,10 @@ brSpawn({x:q.x,y:q.top?L.T+14:L.h-L.T-14});
 function stationDone(i,by){
 const ids=Object.keys(S.contrib[i]);
 ids.forEach(id=>{const p=S.players.get(id);if(p){const g=id===by?60:40;p.score+=g;p.rd+=g}});
-payWrenches(ids,S.dmg[i]);
+const dmg=S.dmg[i];
+payWrenches(ids,dmg);
 emit({t:'sd',i,by,ids});
+hostBonus(5*dmg,S.L.st[i].x,S.L.st[i].y);
 }
 
 function ids0(){return [...S.players.values()].filter(p=>!p.spec)}
@@ -1568,10 +1571,11 @@ if(Math.abs(m.tm-S.time)>0.5)S.time=m.tm;else S.time+=(m.tm-S.time)*0.2;
 function onMsg(m){
 switch(m.t){
 case 'lobby':syncLobby(m);break;
-case 'start':S.mode='game';show(null);setupRound(m.lvl,m.seed);break;
+case 'start':S.mode='game';show(null);setupRound(m.lvl,m.seed);S.L.limit+=m.xt||0;break;
 case 'late':{
 S.mode='game';S.midWait=false;show(null);
 setupRound(m.lvl,m.seed);
+if(m.lm)S.L.limit=m.lm;
 S.time=m.tm;
 m.sd.forEach(i=>{S.stDone[i]=true;S.stProg[i]=1});
 m.pk.forEach(i=>S.taken.add(i));
@@ -1593,6 +1597,7 @@ if(!m.keep){me.fuel=m.fu===undefined?1:m.fu;S.cam.x=m.x;S.cam.y=m.y;toast(m.fu==
 }
 break}
 case 'ps':applyState(m);break;
+case 'tb':{(S.pops=S.pops||[]).push({x:m.x,y:m.y,t:performance.now(),s:m.s});S.tFlash=performance.now();sfx.star();break}
 case 'sd':{
 S.stDone[m.i]=true;S.stProg[m.i]=1;
 const s=S.L.st[m.i],p=S.players.get(m.by);
@@ -1748,7 +1753,7 @@ if(S.phase==='play'&&S.L){
 let sx=0,sy=0;
 if(gh){const sp=S.L.spawn[Math.floor(Math.random()*S.L.spawn.length)];sx=sp.x;sy=sp.y;np.x=np.tx=sx;np.y=np.ty=sy;np.fuel=1}
 sendLobby();
-conn.send({t:'late',lvl:S.lvl,seed:S.seed,tm:S.time,act:!!gh,x:sx,y:sy,
+conn.send({t:'late',lvl:S.lvl,seed:S.seed,tm:S.time,lm:S.L.limit,act:!!gh,x:sx,y:sy,
 sd:S.stDone.map((v,i)=>v?i:-1).filter(i=>i>=0),
 pk:[...S.taken],fk:[...S.fTaken],br:S.br,
 dr:S.L.walls.filter(w=>w.door!==undefined&&w.door!==null&&w.open).map(w=>w.door)});
@@ -1937,11 +1942,21 @@ show('menu');$('err').textContent=msg||'';
 if(inviteMode&&msg)$('joinBack').style.display='';
 }
 
+function crewExtra(){
+const n=[...S.players.values()].filter(p=>!p.spec).length;
+return n<=1?20:n===2?10:0;
+}
+function hostBonus(sec,x,y){
+const g=Math.min(sec,Math.max(0,S.time));
+if(g<1)return;
+S.time-=g;
+emit({t:'tb',s:Math.round(g),x,y});
+}
 function startRound(lvl){
 if(lvl===1){S.players.forEach(p=>p.score=0);if(S.ghosts)S.ghosts.clear();countGame()}
 const seed=(Math.random()*4e9)>>>0;
 S.mode='game';
-emit({t:'start',lvl,seed});
+emit({t:'start',lvl,seed,xt:crewExtra()});
 }
 
 const GC_URL='https://abacus.jasoncameron.dev/';
@@ -2409,6 +2424,16 @@ else if(c>=2)txt('x'+sp.toFixed(1)+' TEAMWORK',0,s.top?64:-64,15,'#7affc8','cent
 }
 ctx.restore();
 });
+if(S.pops&&S.pops.length){
+const nw=performance.now();
+S.pops=S.pops.filter(q=>nw-q.t<1800);
+S.pops.forEach(q=>{
+const a=(nw-q.t)/1800;
+ctx.save();ctx.globalAlpha=1-a*a;
+txt('+'+q.s+'s',q.x,q.y-50-a*60,30,'#7affc8','center','900');
+ctx.restore();
+});
+}
 {
 const f=L.fin,open=allDone();
 ctx.save();ctx.translate(f.x,f.y);
@@ -2698,7 +2723,8 @@ if(S.phase==='won'||S.phase==='board')txt('SELF DESTRUCT HALTED',16,70,16,'#7aff
 if(t>=0&&S.phase==='play'){
 const rem=Math.max(0,L.limit-t),low=rem<=20;
 const pul=low?0.6+0.4*Math.sin(t*10):1;
-txt('SELF DESTRUCT '+Math.floor(rem/60)+':'+String(Math.floor(rem%60)).padStart(2,'0'),16,70,low?24:16,low?'rgba(255,70,70,'+pul+')':'#ffb347','left','900');
+const tfl=S.tFlash&&performance.now()-S.tFlash<1500;
+txt('SELF DESTRUCT '+Math.floor(rem/60)+':'+String(Math.floor(rem%60)).padStart(2,'0'),16,70,tfl?24:low?24:16,tfl?'#7affc8':low?'rgba(255,70,70,'+pul+')':'#ffb347','left','900');
 if(low){ctx.fillStyle='rgba(255,0,0,'+(0.05+0.06*Math.sin(t*10))+')';ctx.fillRect(0,0,vw,vh)}
 }
 const list=[...S.players.values()].sort((a,b)=>b.score-a.score);
