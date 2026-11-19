@@ -26,6 +26,8 @@ h2{margin:0;letter-spacing:4px}
 .sub{opacity:.7;font-size:14px}
 input{background:#0b1226;border:1px solid #2c3c6b;color:#fff;border-radius:10px;padding:12px 14px;font-size:18px;text-align:center;outline:none;width:100%}
 input:focus{border-color:#4da3ff}
+#joinBox{display:none;flex-direction:column;gap:10px;width:100%}
+#joinBox .row button{flex:1}
 #code{text-transform:uppercase;letter-spacing:8px;font-weight:800}
 button{background:linear-gradient(180deg,#3d7bff,#2552d6);color:#fff;border:0;border-radius:12px;padding:13px 22px;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:transform .08s,filter .1s}
 button:hover{filter:brightness(1.15);transform:translateY(-1px)}
@@ -117,9 +119,9 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div class="sub" id="invite" style="display:none"></div>
 <input id="name" maxlength="12" placeholder="Your name" autocomplete="off">
 <div id="swatches"></div>
-<div class="row" id="topRow"><button id="solo">PLAY SOLO</button><button id="create">CREATE LOBBY</button></div>
+<div class="row" id="topRow"><button id="play" class="go">PLAY</button><button id="joinOpen">JOIN</button></div>
 <div class="row"><button id="rejoin" style="display:none">REJOIN</button></div>
-<div class="row"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button id="join">JOIN LOBBY</button></div>
+<div id="joinBox"><div class="sub" id="joinPrompt">Enter the lobby code</div><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><div class="row"><button id="joinBack" class="ghost">BACK</button><button id="join" class="go">JOIN</button></div></div>
 <div id="err"></div>
 <div class="help">Aim: mouse, keys or stick. Hold the grab key or left click to grab a wall, release to push off toward your aim, hold longer for a harder push. SHIFT or right click: thrusters. Stay inside a broken panel's circle to repair it. Press Enter in a lobby or game to chat. Change any key with the cog at the top.<br>Gamepad in game: stick aim, A grab, RT thrust, X drop, LT share fuel. Select or View opens chat. Start opens the emote wheel, then aim with the stick or D-pad and press A. In menus: D-pad or stick to move, A select, B back, Start confirm.</div>
 </div>
@@ -180,6 +182,7 @@ tr.win td{background:rgba(255,217,61,.12)}
 <div id="specBar"><span id="specNm"></span><button id="specNext" class="ghost">NEXT</button><button id="specJump" class="go">JUMP IN</button></div>
 <script>
 const $=id=>document.getElementById(id);
+let inviteMode=false;
 const cv=$('c'),ctx=cv.getContext('2d');
 const COLORS=['#ff4d4d','#ff9f1a','#ffd93d','#4cd964','#2ee6d6','#4da3ff','#b57bff','#ff6bd6'];
 const NAMES=['Docking Bay','Crew Quarters','Mess Hall','Cargo Hold','Engineering','Hydroponics','Blackout Deck','Reactor Corridor','Breach Zone','The Core'];
@@ -1601,12 +1604,18 @@ sendLobby();
 
 function genCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ';let s='';for(let i=0;i<4;i++)s+=a[Math.floor(Math.random()*a.length)];return s}
 
+function offlineLobby(msg){
+S.code='';S.peer=null;S.mode='lobby';S.phase='lobby';
+$('err').textContent='';
+show('lobby');renderLobby();
+if(msg)toast(msg,'#ffd93d');
+}
 function startHost(solo){
 S.isHost=true;S.solo=solo;S.myId='H';
 S.players.clear();S.conns.clear();S.ghosts=new Map();S.kicked=new Set();
 const me=makePlayer('H',S.name,S.color,0);S.players.set('H',me);S.me=me;
 if(solo){startRound(1);return}
-if(typeof Peer==='undefined'){leave('Network library failed to load');return}
+if(typeof Peer==='undefined'){offlineLobby();return}
 $('err').textContent='Creating lobby...';
 openPeerHost(0);
 }
@@ -1614,10 +1623,11 @@ function openPeerHost(tries){
 const code=genCode();
 const peer=new Peer(PREFIX+code,PEEROPT);
 S.peer=peer;
-peer.on('open',()=>{S.code=code;S.mode='lobby';S.phase='lobby';$('err').textContent='';show('lobby');renderLobby()});
+const oto=setTimeout(()=>{if(S.mode==='menu'&&S.peer===peer){try{peer.destroy()}catch(e){}offlineLobby()}},9000);
+peer.on('open',()=>{clearTimeout(oto);S.code=code;S.mode='lobby';S.phase='lobby';$('err').textContent='';show('lobby');renderLobby()});
 peer.on('error',e=>{
 if(e.type==='unavailable-id'&&tries<5){try{peer.destroy()}catch(x){}openPeerHost(tries+1)}
-else leave('Could not create lobby ('+e.type+')');
+else{clearTimeout(oto);if(S.mode==='menu'&&S.peer===peer){try{peer.destroy()}catch(x){}offlineLobby()}else leave('Could not create lobby ('+e.type+')')}
 });
 peer.on('connection',conn=>{
 conn.on('data',m=>hostRecv(conn,m));
@@ -1691,12 +1701,18 @@ emit({t:'start',lvl,seed});
 }
 
 function show(id){
-if(id==='menu')updateRejoin();
+$('play').disabled=false;
+if(id==='menu'){
+updateRejoin();
+if(!inviteMode){$('joinBox').style.display='none';$('topRow').style.display=''}
+}
 ['menu','lobby','board'].forEach(s=>$(s).classList.toggle('hidden',s!==id));
 }
 
 function renderLobby(){
-$('lobbyCode').textContent=S.code;
+$('lobbyCode').textContent=S.code||'OFFLINE';
+$('copyCode').style.display=S.code?'':'none';
+if(!S.code)$('copyMsg').textContent='No connection. You can still start and play alone';
 const list=$('plist');list.textContent='';
 S.players.forEach(p=>{
 const d=document.createElement('div');d.className='pl';
@@ -2723,17 +2739,26 @@ let j='';
 try{j=(new URLSearchParams(location.search).get('join')||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4)}catch(e){}
 if(j.length===4){
 $('code').value=j;
+inviteMode=true;
 $('topRow').style.display='none';
+$('joinBox').style.display='flex';
+$('joinPrompt').style.display='none';
+$('joinBack').style.display='none';
 $('code').style.display='none';
 $('invite').style.display='block';
 $('invite').textContent='You are invited to lobby '+j+'. Pick a name and color, then join.';
-$('join').style.flex='1';
-$('join').textContent='JOIN';
-$('join').classList.add('go');
 }
 })();
-$('solo').onclick=()=>{takeName();startHost(true)};
-$('create').onclick=()=>{takeName();startHost(false)};
+$('play').onclick=()=>{takeName();$('play').disabled=true;startHost(false)};
+$('joinOpen').onclick=()=>{
+takeName();$('err').textContent='';
+$('topRow').style.display='none';$('joinBox').style.display='flex';
+$('code').focus();
+};
+$('joinBack').onclick=()=>{
+$('err').textContent='';
+$('joinBox').style.display='none';$('topRow').style.display='';
+};
 $('rejoin').onclick=()=>{
 takeName();
 const c=loadLast();
