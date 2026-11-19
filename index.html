@@ -2638,7 +2638,7 @@ drawWorld(L,sc);
 ctx.restore();
 if(L.dark>0)drawDark(L,sc);
 drawHud(L,sc);
-if(tc.on&&S.phase!=='board'&&!S.chatOpen&&!me.spec)drawTouch();
+if(tc.on&&S.phase!=='board'&&!S.chatOpen&&!S.me.spec)drawTouch();
 }
 
 function tick(dt){
