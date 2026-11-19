@@ -225,6 +225,13 @@ const tn=document.createElement('div');tn.className='nm';tn.textContent='Tutoria
 const tb=document.createElement('button');tb.className='kb';tb.textContent=S.tut.on?'ON':'OFF';
 tb.onclick=()=>{setTut(!S.tut.on);renderSettings()};
 tr.appendChild(tb);box.appendChild(tr);
+[['Ship voice','aiVoice','zg-voice'],['Ship captions','aiCapOn','zg-caps']].forEach(([nm,key,sk])=>{
+const r=document.createElement('div');r.className='sr';
+const n=document.createElement('div');n.className='nm';n.textContent=nm;r.appendChild(n);
+const b=document.createElement('button');b.className='kb';b.textContent=S[key]?'ON':'OFF';
+b.onclick=()=>{S[key]=!S[key];try{localStorage.setItem(sk,S[key]?'1':'0')}catch(e){}if(!S.aiVoice&&window.speechSynthesis)try{speechSynthesis.cancel()}catch(e){}renderSettings()};
+r.appendChild(b);box.appendChild(r);
+});
 ACTIONS.forEach(([a,name])=>{
 const r=document.createElement('div');r.className='sr';
 const n=document.createElement('div');n.className='nm';n.textContent=name;r.appendChild(n);
@@ -817,7 +824,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 tReset();S.emo={};S.br=null;S.brNext=lvl>=4?20+Math.random()*20:1e9;S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.adSeen=false;S.hintT={};S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
+S.adSeen=false;S.hintT={};S.aiN=0;S.aiF={};S.aiCap=null;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -1111,6 +1118,66 @@ S.tut.on=localStorage.getItem('zg-tut')!=='0';
 const v=JSON.parse(localStorage.getItem('zg-tutseen')||'{}');
 S.tut.seen=v&&typeof v==='object'?v:{};
 }catch(e){}
+}
+const SHIP={
+start:{p:2,t:['Hull compromised. Begin repairs.','The ship is falling apart. Please hurry.','Systems failing. Repairs required.']},
+crit:{p:2,t:[n=>'Damaged area '+n+' is critical.',n=>'Damaged area '+n+' is about to rupture.',n=>'Warning. Damaged area '+n+' will not hold.']},
+breach:{p:3,t:['Hull breach detected. Seal it immediately.','Breach. Please do not float toward it.','Hull breach. This is not ideal.']},
+sealed:{p:1,t:['Breach sealed. Well done.','Hull integrity restored.','Breach sealed. Nobody applauded, but I noticed.']},
+bulk:{p:2,t:['Emergency bulkhead engaged. Time lost.','Breach contained by force. Fifteen seconds forfeited.']},
+t60:{p:3,t:['Self destruct in sixty seconds.','One minute to self destruct.']},
+t30:{p:3,t:['Thirty seconds to self destruct.','Self destruct in thirty seconds. Panic is optional.']},
+t10:{p:3,t:['Ten seconds to self destruct.','Ten seconds. It was nice knowing you.']},
+storm:{p:2,t:['Debris storm incoming.','Debris storm approaching. Brace yourselves.','Incoming debris. Try to be somewhere else.']},
+repaired:{p:2,t:['Repairs complete. Reactor online. Collect Astrophage.','All damage repaired. The reactor needs Astrophage.','Hull stable. Gather Astrophage and open the reactor door.']},
+door:{p:2,t:['Reactor door open. Deliver the Astrophage.','Door unlocked. Please bring the Astrophage inside.','Reactor access granted.']},
+power:{p:1,t:[a=>'Reactor power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Astrophage received. Power at '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.',a=>'Reactor charging. '+Math.round(100*a.tot/Math.max(1,a.need))+' percent.']},
+lost:{p:2,t:['Crew member lost.','Crew member ejected. Please retrieve.','Someone has left the ship. This was not planned.']},
+win:{p:3,t:['Level complete. Impressive, for crawlers.','Ship restored. Barely.','Reactor powered. We live to fail another day.']},
+boom:{p:3,t:['Self destruct complete. Have you tried not exploding?','Ship destroyed. Better luck next mission.','Blip-A has exploded. This was avoidable.']}
+};
+try{S.aiVoice=localStorage.getItem('zg-voice')!=='0';S.aiCapOn=localStorage.getItem('zg-caps')!=='0'}catch(e){S.aiVoice=true;S.aiCapOn=true}
+function aiSpeak(text){
+if(!S.aiVoice||muted||!window.speechSynthesis)return;
+try{
+speechSynthesis.cancel();
+const u=new SpeechSynthesisUtterance(text);
+u.rate=0.92;u.pitch=0.55;u.volume=0.9;
+const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
+const v=vs.find(q=>/Google US English|David|Mark|Guy|Daniel|Alex/i.test(q.name))||vs[0];
+if(v)u.voice=v;
+speechSynthesis.speak(u);
+}catch(e){}
+}
+function shipSay(k,arg){
+const d=SHIP[k];if(!d)return;
+const now=performance.now();
+if(S.aiCap&&now<S.aiCap.until&&S.aiCap.p>d.p)return;
+const v=d.t[(S.aiN=(S.aiN||0)+1)%d.t.length],text=typeof v==='function'?v(arg):v;
+S.aiCap={text,until:now+Math.max(3500,text.length*80),p:d.p};
+aiSpeak(text);
+}
+function aiWatch(){
+if(S.phase!=='play'||!S.L||S.time<0)return;
+const A=S.aiF||(S.aiF={}),rem=S.L.limit-S.time;
+if(!allDone())[60,30,10].forEach(x=>{if(rem<=x&&rem>x-4&&!A[x]){A[x]=1;shipSay('t'+x)}});
+if(stormWarn(S.L,S.time)){const key='s'+Math.floor((S.time-11)/22);if(!A[key]){A[key]=1;shipSay('storm')}}
+}
+function drawShipCaption(){
+if(!S.aiCap||!S.aiCapOn)return;
+const now=performance.now();
+if(now>=S.aiCap.until)return;
+let f=vw<520?12:15;
+const s='BLIP-A: '+S.aiCap.text;
+ctx.save();
+ctx.font='800 '+f+'px system-ui,-apple-system,Segoe UI,sans-serif';
+let w=ctx.measureText(s).width;
+if(w>vw-28){f=Math.max(9,Math.floor(f*(vw-28)/w));ctx.font='800 '+f+'px system-ui,-apple-system,Segoe UI,sans-serif';w=ctx.measureText(s).width}
+const y=100+(S.tut.on&&S.tut.cur?66:0);
+ctx.globalAlpha=Math.min(1,(S.aiCap.until-now)/400);
+ctx.fillStyle='rgba(8,12,24,.72)';ctx.beginPath();ctx.roundRect(10,y-14,w+20,28,8);ctx.fill();
+ctx.fillStyle='#7ad7ff';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(s,20,y);
+ctx.restore();
 }
 function setTut(on){
 S.tut.on=on;S.tut.cur=null;
@@ -1636,7 +1703,7 @@ if(Math.abs(m.tm-S.time)>0.5)S.time=m.tm;else S.time+=(m.tm-S.time)*0.2;
 function onMsg(m){
 switch(m.t){
 case 'lobby':syncLobby(m);break;
-case 'start':S.mode='game';show(null);setupRound(m.lvl,m.seed);S.L.limit+=m.xt||0;break;
+case 'start':S.mode='game';show(null);setupRound(m.lvl,m.seed);S.L.limit+=m.xt||0;shipSay('start');break;
 case 'late':{
 S.mode='game';S.midWait=false;show(null);
 setupRound(m.lvl,m.seed);
@@ -1695,14 +1762,14 @@ S.phase='won';S.winner=m.id;S.boardRes=m;S.winT=0;
 m.res.forEach(r=>{const p=S.players.get(r.id);if(p){p.score=r.sc;p.rd=r.rd}});
 const wp=S.players.get(m.id);
 if(wp){for(let i=0;i<80;i++)part(wp.x,wp.y,(Math.random()-0.5)*700,(Math.random()-0.5)*700,1.6,COLORS[Math.floor(Math.random()*8)],3+Math.random()*3);toast('You repaired this level of the ship and restored power to its reactor!','#ffd93d')}
-sfx.win();S.flash=0.6;
+sfx.win();S.flash=0.6;shipSay('win');
 break}
 case 'boom':{
 S.players.forEach(q=>q.ready=false);
 S.phase='boom';S.winT=0;S.boardRes={boom:true,res:m.res,lvl:m.lvl,last:true,id:null};
 m.res.forEach(r=>{const q=S.players.get(r.id);if(q){q.score=r.sc;q.rd=r.rd}});
 S.players.forEach(q=>{burst(q.x,q.y,'#ff9f1a',40,500,1.4);burst(q.x,q.y,'#fff1a8',20,350,1);q.att=null});
-S.shake=45;
+S.shake=45;shipSay('boom');
 [110,90,70,55,40].forEach((f,i)=>tone(f,0.7,'sawtooth',0.14,0.3,i*0.05));
 break}
 case 'tolobby':S.midWait=false;S.mode='lobby';S.phase='lobby';S.L=null;show('lobby');renderLobby();break;
@@ -1712,7 +1779,7 @@ const w=S.L.rd.doorW;
 if(!w.open){
 w.open=true;
 burst(w.x+w.w/2,w.y+w.h/2,'#c58bff',50,460,1);
-toast('Reactor door open! Fly in and deliver the Astrophage','#c58bff');
+toast('Reactor door open! Fly in and deliver the Astrophage','#c58bff');shipSay('door');
 sfx.done();S.shake=Math.max(S.shake,8);
 }
 break}
@@ -1725,8 +1792,8 @@ toast((q?q.name:'Someone')+' unlocked the '+KEYNAME[m.k]+' door','#ffd93d');
 sfx.done();S.shake=Math.max(S.shake,6);
 }
 break}
-case 'adep':{const q=S.players.get(m.id);toast((q?q.name:'Someone')+' delivered '+m.n+' Astrophage ('+m.tot+'/'+m.need+')','#ffe45c');sfx.done();burst(S.L.fin.x,S.L.fin.y,'#ffe45c',30,300,0.9);break}
-case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Damaged area '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn()}break}
+case 'adep':{const q=S.players.get(m.id);toast((q?q.name:'Someone')+' delivered '+m.n+' Astrophage ('+m.tot+'/'+m.need+')','#ffe45c');sfx.done();burst(S.L.fin.x,S.L.fin.y,'#ffe45c',30,300,0.9);shipSay('power',{tot:m.tot,need:m.need});break}
+case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Damaged area '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn();shipSay('crit',m.i+1)}break}
 case 'dgb':{toast('Damaged area '+(m.i+1)+' burst open','#ff6b6b');break}
 case 'eng':{
 const p=S.players.get(m.id);
@@ -1744,19 +1811,19 @@ break}
 case 'brs':{
 S.br={x:m.x,y:m.y,rx:m.rx,ry:m.ry,we:m.we,dl:m.dl,prog:0,r:26};
 S.flash=0.5;S.shake=Math.max(S.shake,10);
-toast('HULL BREACH! Stay at the hole holding 2 wrenches','#ff9f1a');
+toast('HULL BREACH! Stay at the hole holding 2 wrenches','#ff9f1a');shipSay('breach');
 [0,1,2,3].forEach(i=>tone(i%2?620:880,0.16,'square',0.07,1,i*0.18));
 break}
 case 'bre':{
 if(S.br){burst(S.br.x,S.br.y,m.why==='patched'?'#7affc8':'#ff6b6b',30,300,0.8)}
 S.br=null;
-if(m.why==='patched'){const q=S.players.get(m.by);toast('Breach sealed'+(q?' by '+q.name:''),'#7affc8');sfx.done()}
-else toast('Emergency bulkhead sealed the breach. 15 seconds lost','#ff6b6b');
+if(m.why==='patched'){const q=S.players.get(m.by);toast('Breach sealed'+(q?' by '+q.name:''),'#7affc8');sfx.done();shipSay('sealed')}
+else{toast('Emergency bulkhead sealed the breach. 15 seconds lost','#ff6b6b');shipSay('bulk')}
 break}
 case 'ejd':{
 const q=S.players.get(m.id);
 if(q){burst(q.x,q.y,'#b57bff',24,320,0.8);q.out=true}
-toast((m.id===S.myId?'You were':(q?q.name:'Someone')+' was')+' sucked out into space','#b57bff');
+toast((m.id===S.myId?'You were':(q?q.name:'Someone')+' was')+' sucked out into space','#b57bff');shipSay('lost');
 sfx.zap();
 break}
 case 'emo':{
@@ -2890,7 +2957,7 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
-if(allDone()&&!S.adSeen&&S.phase==='play'){S.adSeen=true;S.adT=performance.now();sfx.done()}
+if(allDone()&&!S.adSeen&&S.phase==='play'){S.adSeen=true;S.adT=performance.now();sfx.done();shipSay('repaired')}
 if(S.adSeen&&!me.spec&&S.phase==='play'){
 const e=(performance.now()-S.adT)/1000;
 if(e<5){
@@ -2941,6 +3008,7 @@ if(stormWarn(L,t)){
 ctx.fillStyle='rgba(255,60,60,'+(0.08+0.08*Math.sin(t*12))+')';ctx.fillRect(0,0,vw,vh);
 txt('DEBRIS STORM INCOMING',vw/2,vh*0.2,30,'#ff6b6b','center','900');
 }
+aiWatch();drawShipCaption();
 S.toasts.forEach((o,i)=>{ctx.globalAlpha=Math.min(1,o.t);txt(o.msg,vw/2,vh*0.12+i*26,18,o.col,'center','800');ctx.globalAlpha=1});
 if(S.phase==='won'&&S.boardRes){
 const wp=S.players.get(S.boardRes.id);
@@ -3412,7 +3480,7 @@ if(e.code==='Escape'){e.preventDefault();emoOpen(false);return}
 if(e.code==='Enter'&&(S.mode==='game'||S.mode==='lobby')){e.preventDefault();openChat();return}
 keys[e.code]=true;
 if(S.mode==='game'&&bound(e.code))e.preventDefault();
-if(B.mute.includes(e.code))muted=!muted;
+if(B.mute.includes(e.code)){muted=!muted;if(muted&&window.speechSynthesis)try{speechSynthesis.cancel()}catch(err){}}
 if(S.mode==='game'&&S.me&&S.me.spec){
 if(e.code==='KeyJ')specJump();
 if(e.code==='KeyE'||e.code==='ArrowRight')specNext();
