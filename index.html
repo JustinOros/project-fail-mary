@@ -607,7 +607,7 @@ const r=me.rep;
 if(r>=0&&r<1000&&!S.stDone[r]){
 const dm=(S.dmg&&S.dmg[r])||1,have=wrenchesAt(r);
 if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
-if(have>=dm)return null;
+if(have>=dm)return{t:'Repairing... '+Math.round(Math.min(1,S.stProg[r]||0)*100)+'%',c:'#7affc8'};
 if(wr>0)return{t:'This area needs '+dm+' wrench'+(dm>1?'es':'')+' ('+have+'/'+dm+'). Bring more!',c:'#ffd93d'};
 if(!pr)return{t:noPrinter,c:'#ff8a5c'};
 if(!gray)return{t:'You need a wrench to repair this area! Find gray filament.',c:'#ff8a5c'};
@@ -616,7 +616,7 @@ return null;
 if(r===-3&&brLive()){
 const have=wrenchesAt(-3);
 if(printing)return{t:'Printing a wrench...',c:'#ffd93d'};
-if(have>=2)return null;
+if(have>=2)return{t:'Patching the breach... '+Math.round(Math.min(1,(S.br&&S.br.prog)||0)*100)+'%',c:'#7affc8'};
 if(wr>0)return{t:'The breach needs 2 wrenches ('+have+'/2). Bring more!',c:'#ffd93d'};
 if(!pr)return{t:noPrinter,c:'#ff8a5c'};
 if(!gray)return{t:'You need a wrench to patch this breach! Find gray filament.',c:'#ff8a5c'};
@@ -632,7 +632,7 @@ return null;
 const ra=[];S.players.forEach(q=>{if(!q.spec&&!q.out)ra.push(q)});
 const ri=ra.filter(q=>q.rep===-2).length;
 if(ri<ra.length)return{t:'Waiting for the whole crew to enter the ring ('+ri+'/'+ra.length+')',c:'#ffd93d'};
-return null;
+return{t:'Powering the reactor... '+Math.round(Math.min(1,S.finProg.R||0)*100)+'%',c:'#7affc8'};
 }
 for(const w of S.L.walls){
 if(w.door===undefined||w.open)continue;
