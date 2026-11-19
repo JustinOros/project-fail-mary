@@ -2784,7 +2784,7 @@ if(it.type==='key'){ctx.fillStyle=KEYCOL[it.meta];ctx.fillRect(x+g.size-14,g.y+4
 const cur=invItem(S.myId,me.sel);
 if(cur&&ITEMS[cur.type])txt(itemName(cur)+(cur.type==='printer'?'':tc.on?'   (tap X to drop)':'   ('+lab(B.drop[0])+' or right click to drop)'),g.x0+g.total/2,g.y-14,14,'#ffd93d','center','700');
 const wt=myWeight();
-if(wt>0)txt('Carrying '+wt+' heavy item'+(wt>1?'s':'')+': slower, more fuel use.',16,tc.on?vh-96:vh-48,13,'#ffb347','left','700');
+if(wt>(hasPrinter(S.myId)?1:0))txt('Carrying '+wt+' heavy item'+(wt>1?'s':'')+': slower, more fuel use.',16,tc.on?vh-96:vh-48,13,'#ffb347','left','700');
 }
 function crackGeom(s,i){
 let sd=(i+1)*7919+(S.seed||1)%1000;
