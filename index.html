@@ -1633,10 +1633,11 @@ if(S.finProg.D>=1){S.finProg.D=1;emit({t:'dopen',k:'R'})}
 if(all&&door.open){
 act.forEach(p=>{
 if(p.rep!==-2)return;
-const mine=S.items.filter(it=>it.owner===p.id&&it.type==='astro');
+const room=Math.max(0,(S.finProg.M||0)-(S.finProg.N||0));
+const mine=S.items.filter(it=>it.owner===p.id&&it.type==='astro').slice(0,room);
 if(!mine.length)return;
 S.items=S.items.filter(it=>!mine.includes(it));
-S.finProg.N=(S.finProg.N||0)+mine.length;
+S.finProg.N=Math.min(S.finProg.M||0,(S.finProg.N||0)+mine.length);
 emit({t:'adep',id:p.id,n:mine.length,tot:S.finProg.N,need:S.finProg.M});
 });
 }
