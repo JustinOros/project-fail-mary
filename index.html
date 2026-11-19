@@ -228,6 +228,14 @@ const tn=document.createElement('div');tn.className='nm';tn.textContent='Tutoria
 const tb=document.createElement('button');tb.className='kb';tb.textContent=S.tut.on?'ON':'OFF';
 tb.onclick=()=>{setTut(!S.tut.on);renderSettings()};
 tr.appendChild(tb);box.appendChild(tr);
+[['Music','m'],['Effects','s'],['Ship voice volume','v']].forEach(([nm,k])=>{
+const r=document.createElement('div');r.className='sr';
+const n=document.createElement('div');n.className='nm';n.textContent=nm;r.appendChild(n);
+const sl=document.createElement('input');sl.type='range';sl.min='0';sl.max='100';sl.value=String(Math.round(VOL[k]*100));sl.style.width='140px';
+sl.oninput=()=>{setVol(k,sl.value/100)};
+sl.onchange=()=>{if(k==='s')sfx.chime();else if(k==='v')aiSpeak('Systems check. Amaze.',true)};
+r.appendChild(sl);box.appendChild(r);
+});
 [['Ship voice','aiVoice','zg-voice'],['Ship captions','aiCapOn','zg-caps']].forEach(([nm,key,sk])=>{
 const r=document.createElement('div');r.className='sr';
 const n=document.createElement('div');n.className='nm';n.textContent=nm;r.appendChild(n);
@@ -295,8 +303,15 @@ items:[],nextUid:1,takeT:{},chat:[],chatOpen:false,toasts:[],parts:[],sendT:0,me
 
 function mulberry(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 
-let ac=null,muted=false;
+let ac=null,muted=false,bus=null,noiseBuf=null;
+const VOL={m:0.7,s:0.8,v:1};
 try{muted=localStorage.getItem('zg-muted')==='1'}catch(e){}
+try{[['m','zg-vm'],['s','zg-vs'],['v','zg-vv']].forEach(([k,sk])=>{const x=parseFloat(localStorage.getItem(sk));if(x>=0&&x<=1)VOL[k]=x})}catch(e){}
+function setVol(k,x){
+VOL[k]=x;
+try{localStorage.setItem({m:'zg-vm',s:'zg-vs',v:'zg-vv'}[k],String(x))}catch(e){}
+if(bus&&k!=='v'){bus[k].gain.value=x}
+}
 function setMuted(m){
 muted=m;
 try{localStorage.setItem('zg-muted',m?'1':'0')}catch(e){}
@@ -307,6 +322,16 @@ if(b){b.textContent=m?'🔇':'🔊';b.classList.toggle('off',m)}
 let keep=null;
 function audio(){
 if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){ac=null}}
+if(ac&&!bus){
+try{
+const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=20000;f.Q.value=0.7;f.connect(ac.destination);
+const m=ac.createGain(),sg=ac.createGain();m.gain.value=VOL.m;sg.gain.value=VOL.s;m.connect(f);sg.connect(f);
+bus={m,s:sg,f};
+const nb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=nb.getChannelData(0);
+for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+noiseBuf=nb;
+}catch(e){bus=null}
+}
 if(ac&&ac.state!=='running'){try{const r=ac.resume();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 return ac;
 }
@@ -327,14 +352,23 @@ const pr=keep.play();if(pr&&pr.catch)pr.catch(()=>{keep=null});
 }
 ['touchstart','touchend','pointerup','click','keydown'].forEach(ev=>window.addEventListener(ev,unlockAudio,{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)audio()});
-function tone(f,d,type,vol,slide,delay){
+function tone(f,d,type,vol,slide,delay,bs){
 if(muted)return;const a=audio();if(!a)return;
 const t0=a.currentTime+(delay||0);
 const o=a.createOscillator(),g=a.createGain();
 o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
 if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t0+d);
 g.gain.setValueAtTime(vol||0.08,t0);g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
-o.connect(g);g.connect(a.destination);o.start(t0);o.stop(t0+d+0.02);
+o.connect(g);g.connect(bus?(bs==='m'?bus.m:bus.s):a.destination);o.start(t0);o.stop(t0+d+0.02);
+}
+function nz(d,vol,type,f0,f1,delay,q,bs){
+if(muted)return;const a=audio();if(!a||!noiseBuf)return;
+const t0=a.currentTime+(delay||0);
+const sr=a.createBufferSource();sr.buffer=noiseBuf;sr.loop=true;
+const fl=a.createBiquadFilter();fl.type=type||'lowpass';fl.Q.value=q||1;
+fl.frequency.setValueAtTime(f0,t0);if(f1&&f1!==f0)fl.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t0+d);
+const g=a.createGain();g.gain.setValueAtTime(0.0001,t0);g.gain.linearRampToValueAtTime(vol,t0+Math.min(0.03,d*0.3));g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
+sr.connect(fl);fl.connect(g);g.connect(bus?(bs==='m'?bus.m:bus.s):a.destination);sr.start(t0,Math.random()*1.5);sr.stop(t0+d+0.05);
 }
 const EMOTES=[
 {e:'🆘',l:'Help here'},
@@ -355,7 +389,7 @@ o1.type='sine';o1.frequency.value=48;
 o2.type='triangle';o2.frequency.value=48.9;
 o3.type='sine';o3.frequency.value=96.4;
 const g3=a.createGain();g3.gain.value=0.25;
-o1.connect(lp);o2.connect(lp);o3.connect(g3);g3.connect(lp);lp.connect(hum);hum.connect(a.destination);
+o1.connect(lp);o2.connect(lp);o3.connect(g3);g3.connect(lp);lp.connect(hum);hum.connect(bus?bus.m:a.destination);
 const lfo=a.createOscillator(),lg=a.createGain();
 lfo.type='sine';lfo.frequency.value=0.32;lg.gain.value=40;
 lfo.connect(lg);lg.connect(lp.frequency);
@@ -379,23 +413,135 @@ amb.beat-=dt;
 if(amb.beat<=0){
 amb.beat=0.95-0.65*k;
 const f=TENSION[amb.step%TENSION.length];amb.step++;
-tone(f,0.28,'sawtooth',0.035+0.05*k,0.97);
-if(amb.step%2===0)tone(f*2,0.12,'square',0.012+0.02*k,0.98);
-if(k>0.6&&amb.step%4===0)tone(f*3,0.2,'triangle',0.02+0.03*k,0.9);
+tone(f,0.28,'sawtooth',0.035+0.05*k,0.97,0,'m');
+if(amb.step%2===0)tone(f*2,0.12,'square',0.012+0.02*k,0.98,0,'m');
+if(k>0.6&&amb.step%4===0)tone(f*3,0.2,'triangle',0.02+0.03*k,0.9,0,'m');
+}
+}
+
+const mus={t:0,hb:0,arp:0,as:0,sp:0,beep:0,tk:0,alarm:0,np:0,loops:null};
+const PENTA=[220,261.6,293.7,349.2,392,440,523.3];
+const BRIGHT=[261.6,329.6,392,523.3,392,329.6,440,349.2];
+function mkLoops(a){
+const L={};
+const nsrc=()=>{const sr=a.createBufferSource();sr.buffer=noiseBuf;sr.loop=true;return sr};
+{
+const sr=nsrc(),fl=a.createBiquadFilter();fl.type='bandpass';fl.frequency.value=3200;fl.Q.value=1.4;
+const g=a.createGain();g.gain.value=0;
+const am=a.createGain();am.gain.value=0.5;
+const lfo=a.createOscillator();lfo.type='square';lfo.frequency.value=17;
+const lg=a.createGain();lg.gain.value=0.5;lfo.connect(lg);lg.connect(am.gain);
+sr.connect(fl);fl.connect(am);am.connect(g);g.connect(bus.s);sr.start();lfo.start();
+L.weld={g};
+}
+{
+const o=a.createOscillator();o.type='sawtooth';o.frequency.value=180;
+const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1100;
+const g=a.createGain();g.gain.value=0;
+o.connect(fl);fl.connect(g);g.connect(bus.s);o.start();
+L.chg={g,o};
+}
+{
+const o1=a.createOscillator(),o2=a.createOscillator();o1.type='sine';o2.type='sine';o1.frequency.value=68;o2.frequency.value=102.5;
+const g=a.createGain();g.gain.value=0;
+o1.connect(g);o2.connect(g);g.connect(bus.s);o1.start();o2.start();
+L.rh={g};
+}
+return L;
+}
+function musUpdate(dt){
+const a=audio();
+if(!a||!bus){return}
+const me=S.me,L=S.L;
+const live=S.mode==='game'&&L&&me&&!muted&&a.state==='running';
+if(!mus.loops)try{mus.loops=mkLoops(a)}catch(e){mus.loops={};}
+const lp=mus.loops,tt=a.currentTime;
+const away=live&&(me.spec||me.out);
+bus.f.frequency.setTargetAtTime(away?500:20000,tt,0.15);
+const play=live&&S.phase==='play'&&S.time>=0&&!me.spec;
+const wv=play&&lp.weld&&me.rep!==undefined&&((me.rep>=0&&me.rep<1000&&S.stProg[me.rep]>0&&!S.stDone[me.rep])||(me.rep===-3&&brLive()));
+if(lp.weld)lp.weld.g.gain.setTargetAtTime(wv?0.05:0,tt,0.08);
+let held=0;
+if(play&&allDone())S.players.forEach(q=>{if(q.rep===-4&&!q.spec&&!q.out)held++});
+const ch=play&&me.rep===-4;
+if(lp.chg){
+lp.chg.g.gain.setTargetAtTime(ch?0.05:0,tt,0.1);
+lp.chg.o.frequency.setTargetAtTime(160+380*Math.min(1,S.finProg.D||0)+30*held,tt,0.1);
+}
+let rhT=0;
+if(play&&allDone()&&L.fin){const d=Math.hypot(me.x-L.fin.x,me.y-L.fin.y);rhT=0.07*Math.max(0,1-d/800)}
+if(lp.rh)lp.rh.g.gain.setTargetAtTime(rhT,tt,0.3);
+if(!live){return}
+if(S.players.size>mus.np&&mus.np>0&&S.phase==='play')sfx.chime();
+mus.np=S.players.size;
+if(!play)return;
+const rem=L.limit-S.time;
+mus.hb-=dt;
+if(mus.hb<=0){
+mus.hb=rem<=30?0.75:rem<=60?1.1:2.2;
+tone(55,0.3,'sine',0.1,0.5,0,'m');
+if(rem<=60)tone(55,0.2,'sine',0.07,0.5,0.16,'m');
+}
+if(rem<=30){
+mus.tk-=dt;
+if(mus.tk<=0){mus.tk=0.25;nz(0.04,0.03,'highpass',6000,6000,0,1,'m')}
+}
+if(rem<=10&&rem>0){
+mus.alarm-=dt;
+if(mus.alarm<=0){mus.alarm=0.5;mus.as=(mus.as||0)+1;tone(mus.as%2?466:349,0.22,'square',0.03,1,0,'m')}
+}
+const done=allDone();
+mus.arp-=dt;
+if(mus.arp<=0){
+if(done){
+mus.arp=0.4;
+const f=BRIGHT[mus.as++%BRIGHT.length];
+tone(f,0.5,'triangle',0.045,1,0,'m');
+if(mus.as%4===0)tone(f/2,0.9,'sine',0.05,1,0,'m');
+}else{
+mus.arp=1.4+Math.random()*2.2;
+const f=PENTA[Math.floor(Math.random()*PENTA.length)]*(Math.random()<0.3?2:1);
+tone(f,1.6,'sine',0.028,1.0,0,'m');
+tone(f*1.5,1.2,'sine',0.012,1.0,0.03,'m');
+}
+}
+if(!me.out){
+let nd=1e9;
+if(!done)L.st.forEach((q,i)=>{if(S.stDone[i])return;const d=Math.hypot(me.x-q.x,me.y-q.y);if(d<nd)nd=d});
+if(!wv&&nd<650&&me.rep<0){
+mus.beep-=dt;
+if(mus.beep<=0){mus.beep=0.22+Math.max(0,nd-90)/650*1.1;tone(1250,0.05,'square',0.022)}
+}
+mus.sp-=dt;
+if(mus.sp<=0){
+mus.sp=0.12;
+let near=0;
+L.sparks.forEach(sp=>{const q=sparkPos(sp,S.time);const d=Math.hypot(me.x-q.x,me.y-q.y);if(d<380)near=Math.max(near,1-d/380)});
+L.st.forEach((q,i)=>{if(S.stDone[i]||(S.dmg[i]||0)<2)return;const d=Math.hypot(me.x-q.x,me.y-q.y);if(d<360)near=Math.max(near,0.8*(1-d/360))});
+if(near>0&&Math.random()<0.35+near*0.4){nz(0.05+Math.random()*0.05,0.03+near*0.06,'highpass',2500+Math.random()*3500,2500,0,2)}
+}
 }
 }
 const sfx={
 grab:()=>tone(140,0.12,'triangle',0.12,0.5),
-launch:v=>tone(180+v*200,0.25,'sawtooth',0.05,2.2),
-bump:()=>tone(90,0.1,'square',0.05,0.6),
+launch:v=>{tone(180+v*200,0.25,'sawtooth',0.05,2.2);nz(0.18+0.3*v,0.05+0.07*v,'bandpass',900+v*1800,300,0,1.2)},
+bump:()=>{tone(90,0.1,'square',0.05,0.6);nz(0.14,0.09,'lowpass',500,110);if(myWeight()>1){tone(62,0.22,'square',0.07,0.6);tone(430,0.25,'triangle',0.035,0.7,0.02);nz(0.2,0.05,'bandpass',1800,900,0,3)}},
 zap:()=>{tone(900,0.3,'sawtooth',0.08,0.15);tone(200,0.3,'square',0.06,0.5)},
 tick:()=>tone(520+Math.random()*120,0.06,'square',0.03),
 done:()=>{[523,659,784,1046].forEach((f,i)=>tone(f,0.18,'triangle',0.09,1,i*0.08))},
 star:()=>{tone(880,0.1,'sine',0.09);tone(1320,0.15,'sine',0.09,1,0.07)},
-win:()=>{[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,0.25,'triangle',0.1,1,i*0.11))},
+win:()=>{[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,0.25,'triangle',0.1,1,i*0.11));[131,196,262].forEach(f=>tone(f,1.4,'triangle',0.07,1,0.7,'m'))},
 beep:hi=>tone(hi?880:440,0.18,'square',0.07),
 warn:()=>{tone(300,0.25,'sawtooth',0.07);tone(300,0.25,'sawtooth',0.07,1,0.3)},
-puff:()=>tone(120,0.08,'sawtooth',0.02,0.5)
+puff:()=>{tone(120,0.08,'sawtooth',0.02,0.5);nz(0.1,0.03,'highpass',2200,1600)},
+whoosh:()=>nz(0.9,0.14,'lowpass',2600,160,0,0.8),
+shimmer:()=>{[1568,1976,2349,2637].forEach((f,i)=>tone(f,0.22,'sine',0.045,1.01,i*0.05))},
+ding:()=>{tone(1568,0.35,'sine',0.07);tone(2093,0.4,'sine',0.05,1,0.06)},
+whirr:()=>{for(let i=0;i<6;i++){tone(210+i*18,0.18,'sawtooth',0.022,1.25,i*0.16);nz(0.1,0.022,'bandpass',1400,1800,i*0.16+0.04,2)}},
+rumble:()=>{nz(1.8,0.16,'lowpass',260,50);tone(46,1.6,'sawtooth',0.09,0.55);tone(92,1.2,'square',0.03,0.6)},
+deposit:()=>{tone(110,0.9,'sine',0.09,3);tone(220,0.9,'triangle',0.05,3,0.05);sfx.shimmer()},
+lose:()=>{[392,330,262,196,131].forEach((f,i)=>tone(f,0.42,'sawtooth',0.07,0.92,i*0.22,'m'));nz(1.6,0.2,'lowpass',900,60,0.2)},
+chime:()=>{tone(784,0.25,'sine',0.04);tone(1175,0.35,'sine',0.035,1,0.09)}
 };
 
 function part(x,y,vx,vy,life,col,r){S.parts.push({x,y,vx,vy,life,max:life,col,r})}
@@ -1206,7 +1352,7 @@ if(!item.force&&(!S.aiVoice||muted||performance.now()-item.t>7000)){aiNext();ret
 try{
 speechSynthesis.resume();
 const u=new SpeechSynthesisUtterance(item.text);
-u.rate=S.aiDef?1:0.92;u.pitch=S.aiDef?1:0.55;u.volume=1;u.lang='en-US';
+u.rate=S.aiDef?1:0.92;u.pitch=S.aiDef?1:0.55;u.volume=VOL.v;u.lang='en-US';
 const v=aiPick();
 if(v){u.voice=v;u.lang=v.lang}
 const nm=v?v.name:'browser default voice';
@@ -1644,7 +1790,7 @@ if(!it)return;
 if(it.type==='printer'){toast('Your 3D printer stays with you','#ff8a5c');return}
 S.tut.f.threw=true;
 const dx=Math.cos(me.ang),dy=Math.sin(me.ang);
-if(S.isHost)handleDrop(S.myId,me.sel,dx,dy);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'drop',slot:me.sel,dx,dy});
+sfx.whoosh();if(S.isHost)handleDrop(S.myId,me.sel,dx,dy);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'drop',slot:me.sel,dx,dy});
 if(!me.att&&me.stun<=0){const kk=(ITEMS[it.type]||{kick:100}).kick;me.vx-=dx*kk;me.vy-=dy*kk;burst(me.x+dx*14,me.y+dy*14,'#ffffff',5,90,0.25)}
 tone(260,0.12,'triangle',0.08,0.6);
 }
@@ -1869,7 +2015,7 @@ sfx.win();S.flash=0.6;shipSay('win');
 break}
 case 'boom':{
 S.players.forEach(q=>q.ready=false);
-S.phase='boom';S.winT=0;S.boardRes={boom:true,res:m.res,lvl:m.lvl,last:true,id:null};
+sfx.lose();S.phase='boom';S.winT=0;S.boardRes={boom:true,res:m.res,lvl:m.lvl,last:true,id:null};
 m.res.forEach(r=>{const q=S.players.get(r.id);if(q){q.score=r.sc;q.rd=r.rd}});
 S.players.forEach(q=>{burst(q.x,q.y,'#ff9f1a',40,500,1.4);burst(q.x,q.y,'#fff1a8',20,350,1);q.att=null});
 S.shake=45;shipSay('boom');
@@ -1883,7 +2029,7 @@ if(!w.open){
 w.open=true;
 burst(w.x+w.w/2,w.y+w.h/2,'#c58bff',50,460,1);
 toast('Reactor door open! Fly in and deliver the Astrophage','#c58bff');shipSay('door');
-sfx.done();S.shake=Math.max(S.shake,8);
+sfx.done();sfx.rumble();S.shake=Math.max(S.shake,8);
 }
 break}
 const w=S.L.walls.find(q=>q.door===m.k);
@@ -1895,27 +2041,27 @@ toast((q?q.name:'Someone')+' unlocked the '+KEYNAME[m.k]+' door','#ffd93d');
 sfx.done();S.shake=Math.max(S.shake,6);
 }
 break}
-case 'adep':{const q=S.players.get(m.id);toast((q?q.name:'Someone')+' delivered '+m.n+' Astrophage ('+m.tot+'/'+m.need+')','#ffe45c');sfx.done();burst(S.L.fin.x,S.L.fin.y,'#ffe45c',30,300,0.9);shipSay('power',{tot:m.tot,need:m.need});break}
+case 'adep':{const q=S.players.get(m.id);toast((q?q.name:'Someone')+' delivered '+m.n+' Astrophage ('+m.tot+'/'+m.need+')','#ffe45c');sfx.done();sfx.deposit();burst(S.L.fin.x,S.L.fin.y,'#ffe45c',30,300,0.9);shipSay('power',{tot:m.tot,need:m.need});break}
 case 'dg':{S.dmg[m.i]=m.d;if(m.d>=3){toast('Damaged area '+(m.i+1)+' is about to burst','#ff6b6b');sfx.warn&&sfx.warn();shipSay('crit',m.i+1)}break}
 case 'dgb':{toast('Damaged area '+(m.i+1)+' burst open','#ff6b6b');break}
 case 'eng':{
 const p=S.players.get(m.id);
 toast('You have a 3D printer. Collect filament and print with '+(tc.on?'Y':lab(B.repair[0])),'#ffd93d');
 break}
-case 'prs':{S.prs[m.id]=m.end;tone(520,0.2,'sawtooth',0.05,0.6);break}
+case 'prs':{S.prs[m.id]=m.end;sfx.whirr();break}
 case 'prx':{delete S.prs[m.id];break}
 case 'prd':{
 delete S.prs[m.id];
-if(m.id===S.myId){sfx.star();S.tut.f.printed=true;toast(m.k<0?'Printed a wrench':'Printed a '+KEYNAME[m.k]+' keycard','#7affc8')}
+if(m.id===S.myId){sfx.ding();S.tut.f.printed=true;toast(m.k<0?'Printed a wrench':'Printed a '+KEYNAME[m.k]+' keycard','#7affc8')}
 break}
 case 'tk':{
-if(m.id===S.myId){sfx.star();toast('Picked up '+itemName({type:m.type,meta:m.meta}),'#ffd93d')}
+if(m.id===S.myId){if(m.type==='astro')sfx.shimmer();else sfx.star();toast('Picked up '+itemName({type:m.type,meta:m.meta}),'#ffd93d')}
 break}
 case 'brs':{
 S.br={x:m.x,y:m.y,rx:m.rx,ry:m.ry,we:m.we,dl:m.dl,prog:0,r:26};
 S.flash=0.5;S.shake=Math.max(S.shake,10);
 toast('HULL BREACH! Stay at the hole holding 2 wrenches','#ff9f1a');shipSay('breach');
-[0,1,2,3].forEach(i=>tone(i%2?620:880,0.16,'square',0.07,1,i*0.18));
+[0,1,2,3].forEach(i=>tone(i%2?620:880,0.16,'square',0.07,1,i*0.18));sfx.whoosh();tone(62,0.9,'sawtooth',0.08,0.5);
 break}
 case 'bre':{
 if(S.br){burst(S.br.x,S.br.y,m.why==='patched'?'#7affc8':'#ff6b6b',30,300,0.8)}
@@ -3157,9 +3303,10 @@ if(tc.on&&S.phase!=='board'&&!S.chatOpen&&!S.me.spec)drawTouch();
 
 function tick(dt){
 S.menuT+=dt;
-if(S.mode!=='game'||!S.L||!S.me){if(amb.g)amb.g.gain.value=0;return}
+if(S.mode!=='game'||!S.L||!S.me){if(amb.g)amb.g.gain.value=0;if(mus.loops)musUpdate(dt);return}
 S.time+=dt;
 ambUpdate(dt);
+musUpdate(dt);
 if(S.coopToast&&S.time>=0){S.coopToast=false;if(activeCount()>1&&S.L.st.some((q,i)=>stNeed(i)>1))toast('Numbered panels need that many players at once','#ffd93d')}
 if(S.phase==='boom'){S.parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});S.parts=S.parts.filter(p=>p.life>0);S.shake=Math.max(0,S.shake-dt*20)}
 const me=S.me;

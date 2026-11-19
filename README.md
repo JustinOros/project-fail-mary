@@ -140,7 +140,7 @@ The whole game is `index.html`. Put it in any static host, such as GitHub Pages,
 
 ## Sound
 
-A low engine hum plays while you are aboard the Blip-A, and a tense pulsing bass line speeds up and gets louder as the self destruct timer runs down. Mute with your mute key or the speaker button at the top of the screen. Your choice is remembered.
+All sound is generated in the browser, so there are no audio files. A low engine hum and a slow ambient melody play while you are aboard the Blip-A. As the self destruct timer runs down the music adds a faster heartbeat, ticking, and finally an alarm beat. Once every area is repaired the music turns bright and hopeful for the reactor run. Effects include thruster hiss, wall thunks (heavier when you carry heavy items), a welding crackle while you repair, hull breach whooshes, printer whirrs, Astrophage shimmers, a reactor switch charge-up that rises as the crew joins in, and a door rumble. A beep speeds up as you get close to a damaged area, sparks crackle near damaged equipment, and the reactor hums as you approach. Sound goes muffled when you are sucked out or spectating. Music, Effects and Ship voice volumes have sliders in Settings. Mute with your mute key or the speaker button at the top of the screen. Your choices are remembered.
 
 ## Install as an app
 
