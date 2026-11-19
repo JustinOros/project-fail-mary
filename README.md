@@ -23,7 +23,7 @@ Multiplayer uses free peer to peer connections (PeerJS). If someone cannot join,
 
 ## How a round works
 
-- Patch every damaged area in the ship's walls. Each one shows a number: how many wrenches it uses up. Wrenches are made on the 3D printer (see below). Everyone standing in the circle counts together, and more players patch faster.
+- Patch every damaged area in the ship's walls. A wrench icon with a number blinks twice as you get close: that is how many wrenches it uses up. Wrenches are made on the 3D printer (see below). Everyone standing in the circle counts together, and more players patch faster.
 - Damaged areas show glowing cracks spreading across the wall. The cracks grow longer and hotter as the damage gets worse, shrink while you repair, and fade away when the area is fixed.
 - Patching a damaged area gives time back: 5 seconds per wrench it used, so a damage 3 area adds 15 seconds, shown as a green +15s. A patched hull breach adds 5 seconds. The timer can never go above the level's starting time.
 - Small crews get extra time at the start of every level: 20 seconds when playing solo and 10 seconds with two players.
