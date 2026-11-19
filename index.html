@@ -817,7 +817,7 @@ return{grab,thr,rep,give,ax:dx/l,ay:dy/l};
 
 function setupRound(lvl,seed){
 tReset();S.emo={};S.br=null;S.brNext=lvl>=4?20+Math.random()*20:1e9;S.seed=seed;S.midWait=false;S.coopToast=true;S.tut.f={};S.tut.cur=null;S.tut.angAcc=0;S.lvl=lvl;S.L=buildLevel(lvl,seed);S.time=-3;S.lastCount=99;S.phase='play';
-S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
+S.adSeen=false;S.stDone=S.L.st.map(()=>false);S.stProg=S.L.st.map(()=>0);S.finProg={};S.dmg=S.L.st.map((q,k)=>startDmg(k,S.L.n));S.dmgT=S.L.st.map((q,k)=>S.L.n>=3?50+k*9:1e9);S.taken=new Set();S.pending=new Set();S.fTaken=new Set();S.fPending=new Set();S.fProg=S.L.fuel.map(()=>0);S.items=[];S.pr={};S.prs={};S.nextUid=1;S.gotSeq=0;S.takeT={};S.unlockT={};S.contrib=S.L.st.map(()=>({}));
 S.winner=null;S.lastRem=99;S.parts=[];S.toasts=[];S.boardRes=null;S.warnOn=false;S.flash=0;S.shake=0;
 let i=0;
 S.players.forEach(p=>{
@@ -2877,6 +2877,26 @@ txt('ABOARD THE BLIP-A',vw/2,vh*0.3-36,16,'#9fb4ff','center','800');
 txt('LEVEL '+L.n+': '+L.name.toUpperCase(),vw/2,vh*0.3,34,'#fff','center','900');
 txt(String(c),vw/2,vh*0.46,96,'#ffd93d','center','900');
 }else if(t<1){txt('GO!',vw/2,vh*0.46,96,'#4cd964','center','900')}
+if(allDone()&&!S.adSeen&&S.phase==='play'){S.adSeen=true;S.adT=performance.now();sfx.done()}
+if(S.adSeen&&!me.spec&&S.phase==='play'){
+const e=(performance.now()-S.adT)/1000;
+if(e<5){
+const al=e<4?1:5-e;
+const l1="You've repaired this level of the ship.",l2='Get to the reactor!';
+let f1=vw<520?24:40;
+ctx.font='900 '+f1+'px system-ui,-apple-system,Segoe UI,sans-serif';
+const m1=ctx.measureText(l1).width;
+if(m1>vw-48)f1=Math.floor(f1*(vw-48)/m1);
+const f2=Math.round(f1*1.2);
+ctx.font='900 '+f1+'px system-ui,-apple-system,Segoe UI,sans-serif';
+const w=Math.min(vw-12,ctx.measureText(l1).width+56),cy=vh*0.42;
+ctx.save();ctx.globalAlpha=al;
+ctx.fillStyle='rgba(8,12,24,.8)';ctx.beginPath();ctx.roundRect(vw/2-w/2,cy-f1-6,w,f1+f2+44,16);ctx.fill();
+txt(l1,vw/2,cy-f1/2+6,f1,'#7affc8','center','900');
+txt(l2,vw/2,cy+f2/2+14,f2,'#c58bff','center','900');
+ctx.restore();
+}
+}
 if(L.n===1&&!me.spec&&t<7){
 const al=t<6?1:Math.max(0,7-t);
 const l1='Oh no?! We need to repair the spaceship!!',l2='Patch every damaged area before the self destruct timer runs out.';
