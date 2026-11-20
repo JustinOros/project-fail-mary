@@ -197,14 +197,14 @@ const ICE=[
 ];
 const PEEROPT={config:{iceServers:ICE,iceCandidatePoolSize:4},debug:1};
 const MINV=34,MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9,TL=R*2+46,REVR=R+46;
-const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160},astro:{name:'Astrophage',icon:'✨',weight:0,kick:70},flash:{name:'Flashlight',icon:'🔦',weight:0,kick:90},boots:{name:'Gravity Boots',icon:'🥾',weight:0,kick:120},magnet:{name:'Magnet',icon:'🧲',weight:0,kick:100},crowbar:{name:'Crowbar',icon:'',weight:0,kick:140}};
+const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160},astro:{name:'Astrophage',icon:'✨',weight:0,kick:70},flash:{name:'Flashlight',icon:'🔦',weight:0,kick:90},boots:{name:'Gravity Boots',icon:'🥾',weight:0,kick:120},magnet:{name:'Magnet',icon:'🧲',weight:0,kick:100},crowbar:{name:'Hammer',icon:'🔨',weight:0,kick:140}};
 const SWR=20;
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
 const KEYNAME=['Red','Blue','Green','Yellow','Purple'];
 function rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+a+')'}
 function itemName(it){return it.type==='key'?KEYNAME[it.meta]+' Keycard':it.type==='fil'?(it.meta>=0?KEYNAME[it.meta]:'Gray')+' Filament':(ITEMS[it.type]||{name:'Item'}).name}
 const keys={};
-const ACTIONS=[['up','Aim up'],['down','Aim down'],['left','Aim left'],['right','Aim right'],['grab','Grab / push off'],['thrust','Thrusters'],['drop','Drop item'],['repair','Print (3D printer)'],['hit','Crowbar hit'],['mute','Mute']];
+const ACTIONS=[['up','Aim up'],['down','Aim down'],['left','Aim left'],['right','Aim right'],['grab','Grab / push off'],['thrust','Thrusters'],['drop','Drop item'],['repair','Print (3D printer)'],['hit','Hammer swing'],['mute','Mute']];
 const DEFAULTS={up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],grab:['Space',''],thrust:['ShiftLeft','ShiftRight'],repair:['KeyE','KeyF'],drop:['KeyQ',''],hit:['KeyR',''],mute:['KeyM','']};
 function loadBindings(){const d=JSON.parse(JSON.stringify(DEFAULTS));try{const q=JSON.parse(localStorage.getItem('dw-keys')||'null');if(q)for(const k in d)if(Array.isArray(q[k])&&q[k].length===2)d[k]=q[k]}catch(e){}return d}
 let B=loadBindings();
@@ -1151,7 +1151,7 @@ sfx.swing();
 if(S.isHost)handleSwing(S.myId,sa);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'cb',ang:sa});
 }
 me.hitHeld=!!inp.hit;
-if(!S.cbHint&&S.time>1.5&&hasItemType(me.id,'crowbar')){S.cbHint=true;toast(tc.on?'Tap HIT to swing your crowbar at other players':S.tut.usePad?'Press RT to swing your crowbar at other players':'Press '+lab(B.hit[0])+' to swing your crowbar at other players','#ffd93d')}
+if(!S.cbHint&&S.time>1.5&&hasItemType(me.id,'crowbar')){S.cbHint=true;toast(tc.on?'Tap HIT to swing your hammer at other players':S.tut.usePad?'Press RT to swing your hammer at other players':'Press '+lab(B.hit[0])+' to swing your hammer at other players','#ffd93d')}
 const autoOn=tc.on&&S.autoGrab&&can;
 me.agoff=Math.max(0,(me.agoff||0)-dt);
 me.bootCool=Math.max(0,(me.bootCool||0)-dt);
@@ -3104,8 +3104,12 @@ ctx.save();ctx.translate(p.x,p.y);
 ctx.strokeStyle='rgba(255,255,255,'+(0.45*(1-sw))+')';ctx.lineWidth=9;ctx.lineCap='round';
 ctx.beginPath();ctx.arc(0,0,50,a0,a1);ctx.stroke();
 ctx.rotate(a1);
-ctx.strokeStyle='#2a2f3d';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(54,0);ctx.lineTo(62,-9);ctx.stroke();
-ctx.strokeStyle='#d7dbe6';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(54,0);ctx.lineTo(62,-9);ctx.stroke();
+ctx.strokeStyle='#2a1a10';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(50,0);ctx.stroke();
+ctx.strokeStyle='#b07a45';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(50,0);ctx.stroke();
+ctx.fillStyle='#1f2430';ctx.fillRect(44,-13,20,26);
+ctx.fillStyle='#aeb6c6';ctx.fillRect(46,-11,16,22);
+ctx.fillStyle='rgba(255,255,255,.55)';ctx.fillRect(47,-10,4,20);
+ctx.strokeStyle='#1f2430';ctx.lineWidth=2;ctx.strokeRect(44,-13,20,26);
 ctx.restore();
 }
 }
@@ -3118,22 +3122,7 @@ if(p.stun>0){ctx.font='20px serif';ctx.textAlign='center';ctx.fillText('💫',p.
 }
 
 let platePat=null,deckPat=null;
-function drawCrowbar(x,y,sz){
-ctx.save();ctx.translate(x,y);ctx.rotate(-0.6);
-const k=sz/22;ctx.scale(k,k);
-ctx.lineCap='round';ctx.lineJoin='round';
-ctx.strokeStyle='#2b0d0d';ctx.lineWidth=6;
-ctx.beginPath();ctx.moveTo(-12,6);ctx.lineTo(8,6);ctx.quadraticCurveTo(14,6,13,-1);ctx.lineTo(11,-5);ctx.stroke();
-ctx.beginPath();ctx.moveTo(-12,6);ctx.lineTo(-15,9);ctx.stroke();
-ctx.strokeStyle='#d8443c';ctx.lineWidth=3.6;
-ctx.beginPath();ctx.moveTo(-12,6);ctx.lineTo(8,6);ctx.quadraticCurveTo(14,6,13,-1);ctx.lineTo(11,-5);ctx.stroke();
-ctx.beginPath();ctx.moveTo(-12,6);ctx.lineTo(-15,9);ctx.stroke();
-ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1;
-ctx.beginPath();ctx.moveTo(-9,4.6);ctx.lineTo(6,4.6);ctx.stroke();
-ctx.restore();
-}
 function drawItemIcon(type,x,y,size,col){
-if(type==='crowbar'){drawCrowbar(x,y,size);return}
 ctx.font=size+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=col||'#fff';ctx.fillText(ITEMS[type].icon,x,y);
 }
 function mkPlating(){
