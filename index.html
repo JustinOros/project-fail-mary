@@ -1049,7 +1049,10 @@ const gp=pad();
 if(gp){
 gx=gp.axes[0]||0;gy=gp.axes[1]||0;
 if(Math.hypot(gx,gy)<0.3){gx=0;gy=0}
-grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);hit=hit||bt(gp,7);
+grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);
+const t7=gp.buttons[7],deep=!!t7&&t7.value>0.65;
+S.padHitN=deep?(S.padHitN||0)+1:0;
+hit=hit||S.padHitN>=3;
 }
 if(tc.on){grab=grab||tc.btn.grab;thr=thr||tc.btn.thr;rep=rep||tc.btn.rep;hit=hit||tc.btn.hit}
 let dx,dy,mv=false;
