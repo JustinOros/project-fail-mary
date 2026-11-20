@@ -72,7 +72,7 @@ You float in zero gravity, so momentum is everything.
 - When your fuel is low and you carry an Astrophage, a button appears above your inventory. Tap or click it to burn 1 Astrophage for a full tank in one step.
 - The print menu can also make a Flashlight, Gravity Boots and a Magnet, 2 gray filament each. They are never printed automatically, so you have to open the menu. You can hold one of each at a time. Select the item in your inventory to use it; a newly printed one is selected for you.
 - Flashlight: when loose Astrophage is nearby, it selects itself, lights up the area and pulls the Astrophage toward you so it is easy to collect. You can still select another item and it stays off until Astrophage comes into range again.
-- Crowbar: every player starts with one, in the second inventory slot. You do not need to select it. Press R, the HIT button on a phone, or click a stick on a controller to swing it in the direction you are aiming. Anyone caught in the swing is sent flying, knocked off any wall, and loses control for a moment. A swing has a short cooldown and cannot hit a downed player. It is a normal item, so it can be dropped, and it is scattered if you are sucked out into space.
+- Crowbar: every player starts with one, in the second inventory slot. You do not need to select it. Press R, the HIT button on a phone, or B on a controller to swing it in the direction you are aiming. Anyone caught in the swing is sent flying, knocked off any wall, and loses control for a moment. A swing has a short cooldown and cannot hit a downed player. It is a normal item, so it can be dropped, and it is scattered if you are sucked out into space.
 - Recycle: select a printed item in your inventory, open the print menu and choose Recycle. It is returned as filament right away: a wrench or a keycard gives 1 filament of its color, and the Flashlight, Gravity Boots and Magnet give 2 gray. On a phone, tap the item in the bottom bar first, then tap Recycle.
 - Magnet: it works as long as you carry it, with no need to select it. Loose filament within a short distance drifts toward you, and fuel boxes can be collected from farther away, with a blue stream showing the pull. Drop it to turn it off.
 - Gravity Boots: they work as long as you carry them, with no need to select them. Five small boots show on your feet. Drop them to take them off. When you are close to a wall they pull you onto it and you can walk along it by pushing the stick, arrow keys or phone stick in the direction you want to go. You do not need to hold Thrust. Hold Grab and release to jump off and fly. They have no fuel limit for now.
@@ -106,10 +106,10 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | --- | --- | --- |
 | Aim | Mouse, WASD or arrow keys | Left stick |
 | Grab and push off | Space or left click | A or LB |
-| Thrusters | Shift or right click | RB or B |
+| Thrusters | Shift or right click | RB |
 | Select inventory slot | 1 to 9 or mouse wheel | LT and RT, or D-pad left and right |
 | Drop item | Q or right click a slot | X |
-| Crowbar swing | R | Left or right stick press |
+| Crowbar swing | R | B |
 | Print on 3D printer | E or F | Y |
 | Chat | Enter | Select or View |
 | Mute | M | |

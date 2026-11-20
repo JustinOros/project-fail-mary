@@ -1049,7 +1049,7 @@ const gp=pad();
 if(gp){
 gx=gp.axes[0]||0;gy=gp.axes[1]||0;
 if(Math.hypot(gx,gy)<0.3){gx=0;gy=0}
-grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);hit=hit||bt(gp,10)||bt(gp,11);
+grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,5);rep=rep||bt(gp,3);hit=hit||bt(gp,1);
 }
 if(tc.on){grab=grab||tc.btn.grab;thr=thr||tc.btn.thr;rep=rep||tc.btn.rep;hit=hit||tc.btn.hit}
 let dx,dy,mv=false;
@@ -1148,7 +1148,7 @@ sfx.swing();
 if(S.isHost)handleSwing(S.myId,sa);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'cb',ang:sa});
 }
 me.hitHeld=!!inp.hit;
-if(!S.cbHint&&S.time>1.5&&hasItemType(me.id,'crowbar')){S.cbHint=true;toast(tc.on?'Tap HIT to swing your crowbar at other players':'Press '+lab(B.hit[0])+' to swing your crowbar at other players','#ffd93d')}
+if(!S.cbHint&&S.time>1.5&&hasItemType(me.id,'crowbar')){S.cbHint=true;toast(tc.on?'Tap HIT to swing your crowbar at other players':S.tut.usePad?'Press B to swing your crowbar at other players':'Press '+lab(B.hit[0])+' to swing your crowbar at other players','#ffd93d')}
 const autoOn=tc.on&&S.autoGrab&&can;
 me.agoff=Math.max(0,(me.agoff||0)-dt);
 me.bootCool=Math.max(0,(me.bootCool||0)-dt);
@@ -1543,7 +1543,8 @@ tutSave();
 }
 function tl(a){
 const pd={grab:'A',thr:'B',rep:'Y',drop:'X'};
-if(tc.on||S.tut.usePad)return pd[a];
+if(tc.on)return pd[a];
+if(S.tut.usePad)return a==='thr'?'RB':pd[a];
 const m={grab:'grab',thr:'thrust',rep:'repair',drop:'drop'}[a];
 return lab(B[m][0]);
 }
