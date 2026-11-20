@@ -3256,8 +3256,8 @@ if(up&&iny(-40,0)){
 for(let x=340,i=0;x<w-260;x+=380,i++){
 const up=i%2===1;
 if(!inx(x,x+150))continue;
-if(up&&iny(-44,0)){plate(x,-44,x+150,0,'#33436a','#232d4a');ctx.fillStyle='rgba(255,200,110,.8)';for(let q=14;q<150;q+=30)ctx.fillRect(x+q,-24,12,5)}
-if(!up&&iny(h,h+44)){plate(x,h,x+150,h+44,'#33436a','#232d4a');ctx.fillStyle='rgba(255,200,110,.8)';for(let q=14;q<150;q+=30)ctx.fillRect(x+q,h+19,12,5)}
+if(up&&iny(-44,0)){plate(x,-44,x+150,0,'#33436a','#232d4a');}
+if(!up&&iny(h,h+44)){plate(x,h,x+150,h+44,'#33436a','#232d4a');}
 }
 }
 
