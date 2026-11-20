@@ -197,15 +197,15 @@ const ICE=[
 ];
 const PEEROPT={config:{iceServers:ICE,iceCandidatePoolSize:4},debug:1};
 const MINV=34,MAXL=10,R=16,RR=42,FR=64,FUELT=2.2,SLOTS=9,TL=R*2+46,REVR=R+46;
-const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160},astro:{name:'Astrophage',icon:'✨',weight:0,kick:70},flash:{name:'Flashlight',icon:'🔦',weight:0,kick:90},boots:{name:'Gravity Boots',icon:'🥾',weight:0,kick:120},magnet:{name:'Magnet',icon:'🧲',weight:0,kick:100}};
+const ITEMS={tool:{name:'Wrench',icon:'🔧',weight:1,kick:210},key:{name:'Keycard',icon:'💳',weight:0,kick:90},fil:{name:'Filament',icon:'🧵',weight:0,kick:120},printer:{name:'3D Printer',icon:'🖨️',weight:1,kick:160},astro:{name:'Astrophage',icon:'✨',weight:0,kick:70},flash:{name:'Flashlight',icon:'🔦',weight:0,kick:90},boots:{name:'Gravity Boots',icon:'🥾',weight:0,kick:120},magnet:{name:'Magnet',icon:'🧲',weight:0,kick:100},crowbar:{name:'Crowbar',icon:'🔨',weight:0,kick:140}};
 const SWR=20;
 const KEYCOL=['#ff4d4d','#4da3ff','#4cd964','#ffd93d','#b57bff'];
 const KEYNAME=['Red','Blue','Green','Yellow','Purple'];
 function rgba(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+a+')'}
 function itemName(it){return it.type==='key'?KEYNAME[it.meta]+' Keycard':it.type==='fil'?(it.meta>=0?KEYNAME[it.meta]:'Gray')+' Filament':(ITEMS[it.type]||{name:'Item'}).name}
 const keys={};
-const ACTIONS=[['up','Aim up'],['down','Aim down'],['left','Aim left'],['right','Aim right'],['grab','Grab / push off'],['thrust','Thrusters'],['drop','Drop item'],['repair','Print (3D printer)'],['mute','Mute']];
-const DEFAULTS={up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],grab:['Space',''],thrust:['ShiftLeft','ShiftRight'],repair:['KeyE','KeyF'],drop:['KeyQ',''],mute:['KeyM','']};
+const ACTIONS=[['up','Aim up'],['down','Aim down'],['left','Aim left'],['right','Aim right'],['grab','Grab / push off'],['thrust','Thrusters'],['drop','Drop item'],['repair','Print (3D printer)'],['hit','Crowbar hit'],['mute','Mute']];
+const DEFAULTS={up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],grab:['Space',''],thrust:['ShiftLeft','ShiftRight'],repair:['KeyE','KeyF'],drop:['KeyQ',''],hit:['KeyR',''],mute:['KeyM','']};
 function loadBindings(){const d=JSON.parse(JSON.stringify(DEFAULTS));try{const q=JSON.parse(localStorage.getItem('dw-keys')||'null');if(q)for(const k in d)if(Array.isArray(q[k])&&q[k].length===2)d[k]=q[k]}catch(e){}return d}
 let B=loadBindings();
 function saveBindings(){try{localStorage.setItem('dw-keys',JSON.stringify(B))}catch(e){}}
@@ -287,7 +287,7 @@ for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;
 if(o)renderSettings();
 }
 const mouse={x:0,y:0,l:false,r:false};
-const tc={on:!!((window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||navigator.maxTouchPoints>0||'ontouchstart' in window),sid:null,ox:0,oy:0,vx:0,vy:0,act:false,lat:false,gt:0,btn:{grab:false,thr:false,rep:false},bid:{}};
+const tc={on:!!((window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)||navigator.maxTouchPoints>0||'ontouchstart' in window),sid:null,ox:0,oy:0,vx:0,vy:0,act:false,lat:false,gt:0,btn:{grab:false,thr:false,rep:false,hit:false},bid:{}};
 let vw=0,vh=0,dpr=1,lastT=0;
 
 const S={emo:{},
@@ -533,6 +533,8 @@ if(near>0&&Math.random()<0.35+near*0.4){nz(0.05+Math.random()*0.05,0.03+near*0.0
 }
 }
 const sfx={
+swing:()=>{nz(0.14,0.09,'bandpass',900,2800,0,1.3);tone(300,0.12,'triangle',0.04,0.4)},
+thud:()=>{tone(85,0.2,'square',0.12,0.4);nz(0.2,0.12,'lowpass',420,110);tone(200,0.1,'triangle',0.06,0.5)},
 grab:()=>tone(140,0.12,'triangle',0.12,0.5),
 launch:v=>{tone(180+v*200,0.25,'sawtooth',0.05,2.2);nz(0.18+0.3*v,0.05+0.07*v,'bandpass',900+v*1800,300,0,1.2)},
 bump:()=>{tone(90,0.1,'square',0.05,0.6);nz(0.14,0.09,'lowpass',500,110);if(myWeight()>1){tone(62,0.22,'square',0.07,0.6);tone(430,0.25,'triangle',0.035,0.7,0.02);nz(0.2,0.05,'bandpass',1800,900,0,3)}},
@@ -799,6 +801,24 @@ if(why==='patched'&&S.br&&S.br.si!==undefined&&S.br.si!==null&&!S.stDone[S.br.si
 if(why==='patched'){const ids=[...S.players.values()].filter(p=>p.rep===-3&&!p.spec&&!p.out&&!p.dead).map(p=>p.id);payWrenches(ids,2)}
 emit({t:'bre',why,by});
 }
+function handleSwing(id,ang){
+const p=S.players.get(id);
+if(!p||p.spec||p.out||p.dead||S.phase!=='play'||!hasItemType(id,'crowbar'))return;
+S.cbT=S.cbT||{};
+const now=performance.now();
+if(now-(S.cbT[id]||0)<700)return;
+S.cbT[id]=now;
+ang=+ang||0;
+emit({t:'cbs',id,ang});
+S.players.forEach(q=>{
+if(q.id===id||q.spec||q.out||q.dead)return;
+const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
+if(d>96||d<0.001)return;
+const da=Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-ang),Math.cos(Math.atan2(dy,dx)-ang)));
+if(d>34&&da>1.05)return;
+emit({t:'cbh',id:q.id,from:id,vx:Math.cos(ang)*640,vy:Math.sin(ang)*640});
+});
+}
 function handleEject(id){
 const p=S.players.get(id);
 if(!p)return;
@@ -938,7 +958,8 @@ return{ts,H,right:cx-d-r-10*ts,btns:[
 {k:'grab',x:cx,y:cy+d,r,label:'A',cap:'GRAB',col:'#4cd964',hold:true},
 {k:'thr',x:cx+d,y:cy,r,label:'B',cap:'THRUST',col:'#ff4d4d',hold:true},
 {k:'drop',x:cx-d,y:cy,r,label:'X',cap:'DROP',col:'#4da3ff',hold:false},
-{k:'use',x:cx,y:cy-d,r,label:'Y',cap:'PRINT',col:'#ffd93d',hold:false}
+{k:'use',x:cx,y:cy-d,r,label:'Y',cap:'PRINT',col:'#ffd93d',hold:false},
+{k:'hit',x:cx+d*1.3,y:cy-d*1.45,r:r*0.72,label:'🔨',cap:'HIT',col:'#ff9f1a',hold:true}
 ]};
 }
 function tHit(x,y){
@@ -1016,21 +1037,21 @@ if(vh>vw&&!S.pm)txt('Turn your phone sideways for a wider view',vw/2,vh*0.62,15,
 function typing(){return S.chatOpen||!$('osk').classList.contains('hidden')}
 function readInput(){
 const me=S.me;
-if(typing()||S.emoOpen)return{grab:false,thr:false,rep:false,mv:false,ax:Math.cos(me.ang),ay:Math.sin(me.ang)};
+if(typing()||S.emoOpen)return{grab:false,thr:false,rep:false,hit:false,mv:false,ax:Math.cos(me.ang),ay:Math.sin(me.ang)};
 let ax=0,ay=0;
 if(dn('left'))ax-=1;
 if(dn('right'))ax+=1;
 if(dn('up'))ay-=1;
 if(dn('down'))ay+=1;
-let grab=!!(dn('grab')||mouse.l),thr=!!(dn('thrust')||mouse.r),rep=dn('repair');
+let grab=!!(dn('grab')||mouse.l),thr=!!(dn('thrust')||mouse.r),rep=dn('repair'),hit=dn('hit');
 let gx=0,gy=0;
 const gp=pad();
 if(gp){
 gx=gp.axes[0]||0;gy=gp.axes[1]||0;
 if(Math.hypot(gx,gy)<0.3){gx=0;gy=0}
-grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);
+grab=grab||bt(gp,0)||bt(gp,4);thr=thr||bt(gp,1)||bt(gp,5);rep=rep||bt(gp,3);hit=hit||bt(gp,10)||bt(gp,11);
 }
-if(tc.on){grab=grab||tc.btn.grab;thr=thr||tc.btn.thr;rep=rep||tc.btn.rep}
+if(tc.on){grab=grab||tc.btn.grab;thr=thr||tc.btn.thr;rep=rep||tc.btn.rep;hit=hit||tc.btn.hit}
 let dx,dy,mv=false;
 if(ax||ay){dx=ax;dy=ay;mv=true}
 else if(gx||gy){dx=gx;dy=gy;mv=true}
@@ -1045,7 +1066,7 @@ dx=mouse.x-sx;dy=mouse.y-sy;
 if(Math.hypot(dx,dy)<14){dx=Math.cos(me.ang);dy=Math.sin(me.ang)}
 }
 const l=Math.hypot(dx,dy)||1;
-return{grab,thr,rep,mv,ax:dx/l,ay:dy/l};
+return{grab,thr,rep,hit,mv,ax:dx/l,ay:dy/l};
 }
 
 function setupRound(lvl,seed){
@@ -1118,7 +1139,16 @@ if(!live||me.out){me.vx=me.vy=0;me.att=null;me.tow=null;me.a=0;return}
 const can=me.stun<=0&&!me.dead;
 if(S.pm)S.pmBlock=true;else if(!inp.grab)S.pmBlock=false;
 const gb=!!S.pmBlock;
+me.cbCool=Math.max(0,(me.cbCool||0)-dt);
 const grab=can&&inp.grab&&!gb;
+if(inp.hit&&!me.hitHeld&&can&&!S.pm&&me.cbCool<=0&&hasItemType(me.id,'crowbar')){
+me.cbCool=0.9;
+const sa=Math.atan2(inp.ay,inp.ax);
+sfx.swing();
+if(S.isHost)handleSwing(S.myId,sa);else if(S.hostConn&&S.hostConn.open)S.hostConn.send({t:'cb',ang:sa});
+}
+me.hitHeld=!!inp.hit;
+if(!S.cbHint&&S.time>1.5&&hasItemType(me.id,'crowbar')){S.cbHint=true;toast(tc.on?'Tap HIT to swing your crowbar at other players':'Press '+lab(B.hit[0])+' to swing your crowbar at other players','#ffd93d')}
 const autoOn=tc.on&&S.autoGrab&&can;
 me.agoff=Math.max(0,(me.agoff||0)-dt);
 me.bootCool=Math.max(0,(me.bootCool||0)-dt);
@@ -1718,6 +1748,7 @@ const want=dm0+(L.n>=3?L.st.length:0)+3+(L.n<=2?0:pc);
 (L.fil||[]).slice(0,want).forEach(k=>mk(k,-1));
 ids0().forEach(p=>{
 giveItem(p.id,'printer',p.id);
+giveItem(p.id,'crowbar',0);
 if(L.n<=2)giveItem(p.id,'tool',0);
 });
 const need=astroNeed(L.n,pc);
@@ -2232,6 +2263,20 @@ if(!m.keep){me.fuel=m.fu===undefined?1:m.fu;S.cam.x=m.x;S.cam.y=m.y;toast(m.dead
 break}
 case 'ps':applyState(m);break;
 case 'rpw':{S.rpwT=performance.now();sfx.powerup();shipSay('powering');break}
+case 'cbs':{
+const q=S.players.get(m.id);
+if(q){q.swT=S.time;q.swA=+m.ang||0;if(m.id!==S.myId)sfx.swing()}
+break}
+case 'cbh':{
+const q=S.players.get(m.id);
+if(q){burst(q.x,q.y,'#ffd93d',18,340,0.5);burst(q.x,q.y,'#ffffff',8,200,0.3)}
+sfx.thud();
+if(m.id===S.myId&&S.me){
+const me=S.me;
+me.att=null;me.tow=null;me.charge=0;me.vx=+m.vx||0;me.vy=+m.vy||0;me.stun=0.8;me.nograb=0.6;
+S.shake=Math.max(S.shake,12);
+}
+break}
 case 'rev':{
 const q=S.players.get(m.id);
 if(q){q.dead=false;q.rv=0;q.stun=0;burst(q.x,q.y,'#7affc8',28,300,0.8)}
@@ -2452,6 +2497,7 @@ if(jp&&jp.spec&&S.mode==='game'&&S.phase==='play'&&S.L){
 const sp=S.L.spawn[Math.floor(Math.random()*S.L.spawn.length)];
 jp.spec=false;jp.x=jp.tx=sp.x;jp.y=jp.ty=sp.y;jp.vx=jp.vy=0;jp.fuel=1;jp.att=null;jp.stun=0;jp.rep=-1;
 if(!hasPrinter(id)&&freeSlot(id)>=0)giveItem(id,'printer',id);
+if(!hasItemType(id,'crowbar')&&freeSlot(id)>=0)giveItem(id,'crowbar',0);
 conn.send({t:'spawn',x:sp.x,y:sp.y});
 sendLobby();
 }
@@ -2477,6 +2523,8 @@ if(S.players.has(id)&&typeof m.text==='string')emit({t:'chat',id,text:m.text.sli
 if(S.phase==='play')handleDrop(id,m.slot|0,+m.dx||0,+m.dy||0);
 }else if(m.t==='take'){
 if(S.phase==='play')handleTake(id,m.uid);
+}else if(m.t==='cb'){
+handleSwing(id,m.ang);
 }else if(m.t==='print'){
 if(S.phase==='play'){if(m.r)handlePrintR(id,String(m.r),m.m|0);else handlePrint(id)}
 }else if(m.t==='unlock'){
@@ -3044,6 +3092,19 @@ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ex,ey,3.6,0,6.3);ctx.fill();
 ctx.fillStyle='#10162e';ctx.beginPath();ctx.arc(ex+dx*1.3,ey+dy*1.3,1.9,0,6.3);ctx.fill();
 }
 ctx.restore();
+if(p.swT!==undefined){
+const sw=(S.time-p.swT)/0.25;
+if(sw>=0&&sw<1){
+const a0=p.swA-1.1,a1=a0+2.2*sw;
+ctx.save();ctx.translate(p.x,p.y);
+ctx.strokeStyle='rgba(255,255,255,'+(0.45*(1-sw))+')';ctx.lineWidth=9;ctx.lineCap='round';
+ctx.beginPath();ctx.arc(0,0,50,a0,a1);ctx.stroke();
+ctx.rotate(a1);
+ctx.strokeStyle='#2a2f3d';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(54,0);ctx.lineTo(62,-9);ctx.stroke();
+ctx.strokeStyle='#d7dbe6';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(54,0);ctx.lineTo(62,-9);ctx.stroke();
+ctx.restore();
+}
+}
 let hold=null;
 for(const it of S.items)if(it.owner===p.id&&(!hold||(it.got||0)>(hold.got||0)))hold=it;
 if(hold&&hold.type!=='boots'&&ITEMS[hold.type]){ctx.font='15px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ITEMS[hold.type].icon,p.x+hx,p.y+hy)}
