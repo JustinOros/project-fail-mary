@@ -58,7 +58,7 @@ You float in zero gravity, so momentum is everything.
 ## Inventory and tools
 
 - The row of slots at the bottom of the screen is your inventory. New items go into the first free slot.
-- Select a slot with the number keys 1 to 9, the mouse wheel, a click, or LT and RT or left and right on the D-pad. The selected item is equipped and shown in your crawler's hand.
+- Select a slot with the number keys 1 to 9, the mouse wheel, a click, or left and right on the D-pad. The selected item is equipped and shown in your crawler's hand.
 - Drop the selected item with Q, right click on a slot, or X on a controller. Dropped items float away, and anyone can pick them up by touching them. You cannot pick your own drop back up for about a second and a half.
 - Wrenches and the printer are heavy. Every heavy item you carry makes your thrusters weaker, lowers your top speed, weakens your push off, and burns fuel faster. Throwing items is a quick way to pass them to friends.
 
@@ -68,11 +68,11 @@ You float in zero gravity, so momentum is everything.
 - Filament floats around the ship like fuel. Touch it to pick it up. Anyone can carry it, and you can throw it to a friend who needs it.
 - Printing is automatic. Stand in a damaged area circle or a breach with gray filament and no wrench, and your printer makes a wrench (2 seconds) which is then used on the repair. Touch a locked door while carrying filament of its color and the keycard is printed and the door opens. Players in the same circle do not print more wrenches than the spot needs.
 - A banner at the bottom tells you what you are missing, for example "A wrench is required to repair this damage (1 Gray Filament)." or "A Blue keycard is required to open this door (1 Blue Filament)."
-- Press E (Y on a controller or phone) to open the print menu. It lists what you can print, with the cost under each name: a wrench (1 gray filament), a keycard of each color you have filament for (1 filament of that color), and fuel (1 Astrophage refills your whole tank). Items you cannot afford are greyed out and say what is missing. The most useful item for where you are standing is listed first. Tap or click a row, press its number (1 to 9), or use the D-pad, LT and RT to pick one and press A, X or Y to print it. B closes the menu. Each print takes 2 seconds. The print menu is drawn on top of everything else on screen, and pressing Grab while it is open only picks from the menu: it never lets go of a wall or releases a tether. Burning an Astrophage for fuel costs the crew one, and a replacement slowly respawns, so only do it when you are low.
+- Press E (Y on a controller or phone) to open the print menu. It lists what you can print, with the cost under each name: a wrench (1 gray filament), a keycard of each color you have filament for (1 filament of that color), and fuel (1 Astrophage refills your whole tank). Items you cannot afford are greyed out and say what is missing. The most useful item for where you are standing is listed first. Tap or click a row, press its number (1 to 9), or use the D-pad to pick one and press A, X or Y to print it. B closes the menu. Each print takes 2 seconds. The print menu is drawn on top of everything else on screen, and pressing Grab while it is open only picks from the menu: it never lets go of a wall or releases a tether. Burning an Astrophage for fuel costs the crew one, and a replacement slowly respawns, so only do it when you are low.
 - When your fuel is low and you carry an Astrophage, a button appears above your inventory. Tap or click it to burn 1 Astrophage for a full tank in one step.
 - The print menu can also make a Flashlight, Gravity Boots and a Magnet, 2 gray filament each. They are never printed automatically, so you have to open the menu. You can hold one of each at a time. Select the item in your inventory to use it; a newly printed one is selected for you.
 - Flashlight: when loose Astrophage is nearby, it selects itself, lights up the area and pulls the Astrophage toward you so it is easy to collect. You can still select another item and it stays off until Astrophage comes into range again.
-- Crowbar: every player starts with one, in the second inventory slot. You do not need to select it. Press R, the HIT button on a phone, or B on a controller to swing it in the direction you are aiming. Anyone caught in the swing is sent flying, knocked off any wall, and loses control for a moment. A swing has a short cooldown and cannot hit a downed player. It is a normal item, so it can be dropped, and it is scattered if you are sucked out into space.
+- Crowbar: every player starts with one, in the second inventory slot. You do not need to select it. Press R, the HIT button on a phone, or RT on a controller to swing it in the direction you are aiming. Anyone caught in the swing is sent flying, knocked off any wall, and loses control for a moment. A swing has a short cooldown and cannot hit a downed player. It is a normal item, so it can be dropped, and it is scattered if you are sucked out into space.
 - Recycle: select a printed item in your inventory, open the print menu and choose Recycle. It is returned as filament right away: a wrench or a keycard gives 1 filament of its color, and the Flashlight, Gravity Boots and Magnet give 2 gray. On a phone, tap the item in the bottom bar first, then tap Recycle.
 - Magnet: it works as long as you carry it, with no need to select it. Loose filament within a short distance drifts toward you, and fuel boxes can be collected from farther away, with a blue stream showing the pull. Drop it to turn it off.
 - Gravity Boots: they work as long as you carry them, with no need to select them. Five small boots show on your feet. Drop them to take them off. When you are close to a wall they pull you onto it and you can walk along it by pushing the stick, arrow keys or phone stick in the direction you want to go. You do not need to hold Thrust. Hold Grab and release to jump off and fly. They have no fuel limit for now.
@@ -106,10 +106,10 @@ Hazards ramp up as levels go on: electric orbs, steam vents, slick walls you can
 | --- | --- | --- |
 | Aim | Mouse, WASD or arrow keys | Left stick |
 | Grab and push off | Space or left click | A or LB |
-| Thrusters | Shift or right click | RB |
-| Select inventory slot | 1 to 9 or mouse wheel | LT and RT, or D-pad left and right |
+| Thrusters | Shift or right click | RB or B |
+| Select inventory slot | 1 to 9 or mouse wheel | D-pad left and right |
 | Drop item | Q or right click a slot | X |
-| Crowbar swing | R | B |
+| Crowbar swing | R | RT |
 | Print on 3D printer | E or F | Y |
 | Chat | Enter | Select or View |
 | Mute | M | |
