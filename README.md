@@ -53,7 +53,7 @@ You float in zero gravity, so momentum is everything.
 - Repairs start by themselves while you are inside the dashed ring around a panel. No button is needed. If you leave the ring for more than 1 second, or get stunned, the progress resets back to zero.
 - Fuel boxes refill half a tank. Just fly into one. A box is ignored while your tank is almost full, so it stays for someone who needs it.
 - Crawlers bump into each other, so you can knock a friend off a panel.
-- If a breach sucks you out, you respawn at an airlock as a downed crawler with X eyes and cannot move or act. Any teammate can revive you by staying inside your dashed circle for about 3 seconds, and more helpers revive you faster. Grabbing a downed friend tethers them to you so you can drag them and stay in range. If nobody is left standing, the ship reboots you automatically after about 6 seconds.
+- If a breach sucks you out, you respawn at an airlock as a downed crawler with X eyes and cannot move or act. Any teammate can revive you by staying inside your dashed circle for about 3 seconds, and more helpers revive you faster. Grabbing a downed friend tethers them to you so you can drag them and stay in range. If everyone is down at the same time, the ship reboots all of you together after about 6 seconds, so nobody has to wait to be revived by the first one up.
 
 ## Inventory and tools
 
