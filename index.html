@@ -3276,8 +3276,8 @@ if(up&&iny(-40,0)){
 for(let x=340,i=0;x<w-260;x+=380,i++){
 const up=i%2===1;
 if(!inx(x,x+150))continue;
-if(up&&iny(-44,0)){plate(x,-44,x+150,0,'#33436a','#232d4a');}
-if(!up&&iny(h,h+44)){plate(x,h,x+150,h+44,'#33436a','#232d4a');}
+if(up&&iny(-44,0)){plate(x,-44,x+150,0,'#33436a','#232d4a');txt('ominous doodad #'+(i+1),x+75,-22,12,'#ffd93d','center','800')}
+if(!up&&iny(h,h+44)){plate(x,h,x+150,h+44,'#33436a','#232d4a');txt('ominous doodad #'+(i+1),x+75,h+22,12,'#ffd93d','center','800')}
 }
 }
 
