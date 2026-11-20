@@ -3052,11 +3052,21 @@ const wx=Math.cos(p.wa),wy=Math.sin(p.wa);
 const dark=shade(col,0.55),lite=shade(col,1.25);
 ctx.lineCap='round';ctx.lineJoin='round';
 let hx=0,hy=0;
+let swA1=null,swK=-1;
+if(p.swT!==undefined&&!p.dead){
+const sw0=(S.time-p.swT)/0.25;
+if(sw0>=0&&sw0<1){
+swA1=p.swA-1.1+2.2*sw0;
+let bd=9;
+for(let k=0;k<5;k++){const d=Math.abs(Math.atan2(Math.sin(p.ang+Math.PI/5+k*1.2566-swA1),Math.cos(p.ang+Math.PI/5+k*1.2566-swA1)));if(d<bd){bd=d;swK=k}}
+}
+}
 for(let k=0;k<5;k++){
 const a=p.ang+Math.PI/5+k*1.2566;
 const wob=Math.sin(ph+k*1.9)*(dancing?0.6:0.16);
 let fx,fy,kx,ky,grip=false;
-if(p.a){
+if(k===swK){kx=Math.cos(swA1)*9;ky=Math.sin(swA1)*9;fx=Math.cos(swA1)*17;fy=Math.sin(swA1)*17;grip=true}
+else if(p.a){
 const d=Math.atan2(Math.sin(a-p.wa),Math.cos(a-p.wa));
 if(Math.abs(d)<1.15){
 grip=true;
